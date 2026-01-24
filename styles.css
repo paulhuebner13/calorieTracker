@@ -510,6 +510,38 @@ body{
     border-radius: 20px;
     padding: 16px 10px;
   }
+
+    /* === EXTRA BIG TOP METRICS (kcal / protein / price) === */
+  .metric__label{
+    font-size: calc(18px * var(--ui-scale)); /* bigger "kcal / protein / preis" */
+  }
+
+  .metric__value{
+    font-size: clamp(64px, 14vw, 92px); /* ~2x bigger on phone */
+    margin-top: calc(10px * var(--ui-scale));
+  }
+
+  .metric__sub{
+    font-size: calc(18px * var(--ui-scale)); /* bigger percent */
+    margin-top: calc(10px * var(--ui-scale));
+  }
+
+  /* === KH / FAT: make only the numbers bigger === */
+  .miniMetric__value{
+    font-size: calc(26px * var(--ui-scale));
+    font-weight: 980;
+  }
+
+  /* === Bottom tabs: slightly bigger === */
+  .tabBtn{
+    min-height: calc(66px * var(--ui-scale));
+    font-size: calc(18px * var(--ui-scale));
+    padding: calc(16px * var(--ui-scale)) calc(12px * var(--ui-scale));
+  }
+
+  .h2{
+    font-size: calc(22px * var(--ui-scale));
+  }
 }
 
 
