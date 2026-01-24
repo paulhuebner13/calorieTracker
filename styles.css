@@ -386,33 +386,125 @@ body{
     gap: 12px;
   }
 
-  .sideActions{
-    width: 100%;
-  }
-
   .metrics3{
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* one big tile per row */
     gap: 12px;
   }
 
   .metric{
-    min-height: 120px;
-    padding: 16px;
+    min-height: 132px;
+    padding: 18px;
   }
 
   .metric__value{
-    font-size: 38px;
+    font-size: clamp(44px, 12vw, 70px); /* huge numbers */
   }
 
   .miniRow{
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr; /* stack mini cards */
   }
 
-  .miniData{
-    grid-column: 1 / -1;
+  .miniMetric, .miniData{
+    min-height: 84px;
+    padding: 14px;
+    border-radius: 18px;
   }
 
   .grid2{
     grid-template-columns: 1fr;
+  }
+
+  .btn{
+    width: 100%; /* app-like full width buttons */
+  }
+
+  .actionsRow{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .tabs{
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
+
+
+/* PHONE MODE: touch devices (Android, iPhone) */
+@media (pointer: coarse) {
+  :root{
+    /* overall scale up */
+    --card-radius: 22px;
+  }
+
+  body{
+    font-size: 18px; /* bigger base */
+  }
+
+  .content{
+    max-width: none;           /* use full width */
+    margin: 0;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .card{
+    border-radius: 22px;
+    padding: 16px;
+    margin: 14px 0;
+  }
+
+  /* make the big numbers REALLY big */
+  .metric__value{
+    font-size: clamp(40px, 10vw, 64px);
+  }
+  .metric__label{
+    font-size: 16px;
+  }
+  .metric__sub{
+    font-size: 16px;
+  }
+
+  .miniMetric__value{
+    font-size: 20px;
+  }
+  .miniMetric__label{
+    font-size: 14px;
+  }
+
+  /* buttons: bigger tap targets */
+  .btn{
+    min-height: 58px;
+    font-size: 17px;
+    padding: 16px 18px;
+    border-radius: 18px;
+  }
+  .btn--tiny{
+    min-height: 46px;
+    font-size: 15px;
+    padding: 12px 14px;
+    border-radius: 16px;
+  }
+
+  /* list items larger */
+  .item{
+    padding: 16px;
+    border-radius: 18px;
+  }
+  .item__title{
+    font-size: 17px;
+  }
+  .item__sub, .item__right{
+    font-size: 15px;
+  }
+
+  /* bottom tabs bigger */
+  .tabBtn{
+    min-height: 62px;
+    font-size: 17px;
+    border-radius: 20px;
+    padding: 16px 10px;
   }
 }
