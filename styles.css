@@ -470,7 +470,7 @@ body{
   }
 
   .metric__value{
-    font-size: clamp(64px, 15vw, 96px); /* clearly bigger */
+    font-size: clamp(56px, 12vw, 76px); /* clearly bigger */
     margin-top: calc(10px * var(--ui-scale));
   }
 
