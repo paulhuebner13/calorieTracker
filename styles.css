@@ -6,6 +6,9 @@
   --line: rgba(255,255,255,0.10);
   --accent: #89c7ff; /* baby blue */
   --danger: #ff6b6b;
+  --ui-scale: 1;          /* default desktop */
+  --ui-scale-phone: 1.6;  /* your requested phone scale */
+
 }
 
 *{ box-sizing: border-box; }
@@ -506,5 +509,132 @@ body{
     font-size: 17px;
     border-radius: 20px;
     padding: 16px 10px;
+  }
+}
+
+
+/* PHONE SCALE: make EVERYTHING (except the big numbers) about 1.6x bigger */
+@media (pointer: coarse) {
+  :root{
+    --ui-scale: var(--ui-scale-phone);
+  }
+
+  /* remove max width so we use full screen */
+  .content{
+    max-width: none;
+    margin: 0;
+  }
+
+  /* scale typography (general) */
+  body{
+    font-size: calc(16px * var(--ui-scale));
+  }
+
+  .h2{
+    font-size: calc(18px * var(--ui-scale));
+  }
+  .h3{
+    font-size: calc(15px * var(--ui-scale));
+  }
+
+  /* labels / small texts */
+  .metric__label{
+    font-size: calc(14px * var(--ui-scale));
+  }
+  .metric__sub{
+    font-size: calc(14px * var(--ui-scale));
+  }
+
+  /* IMPORTANT: keep big numbers as-is (you said they are good) */
+  .metric__value{
+    font-size: unset; /* do not scale here */
+  }
+
+  /* mini cards (KH/Fett/Daten) */
+  .miniMetric__label{
+    font-size: calc(13px * var(--ui-scale));
+  }
+  .miniMetric__value{
+    font-size: calc(18px * var(--ui-scale));
+  }
+
+  /* buttons */
+  .btn{
+    min-height: calc(52px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
+    padding: calc(14px * var(--ui-scale)) calc(16px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
+  }
+  .btn--tiny{
+    min-height: calc(42px * var(--ui-scale));
+    font-size: calc(14px * var(--ui-scale));
+    padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale));
+    border-radius: calc(14px * var(--ui-scale));
+  }
+
+  /* list items */
+  .item{
+    padding: calc(14px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
+    gap: calc(8px * var(--ui-scale));
+  }
+  .item__title{
+    font-size: calc(16px * var(--ui-scale));
+  }
+  .item__sub{
+    font-size: calc(14px * var(--ui-scale));
+  }
+  .item__right{
+    font-size: calc(14px * var(--ui-scale));
+  }
+
+  /* inputs, selects, search fields */
+  .field span{
+    font-size: calc(14px * var(--ui-scale));
+  }
+  .field input,
+  .field select,
+  .searchInput{
+    min-height: calc(54px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
+    padding: calc(14px * var(--ui-scale)) calc(14px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
+  }
+
+  /* cards spacing */
+  .card{
+    padding: calc(14px * var(--ui-scale));
+    border-radius: calc(18px * var(--ui-scale));
+    margin: calc(12px * var(--ui-scale)) 0;
+  }
+
+  /* bottom tabs */
+  .tabBtn{
+    min-height: calc(56px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
+    padding: calc(14px * var(--ui-scale)) calc(10px * var(--ui-scale));
+    border-radius: calc(18px * var(--ui-scale));
+  }
+  .tabs{
+    padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale))
+      calc(10px * var(--ui-scale) + env(safe-area-inset-bottom))
+      calc(12px * var(--ui-scale));
+    gap: calc(10px * var(--ui-scale));
+  }
+
+  /* modal */
+  .modal__sheet{
+    padding: calc(14px * var(--ui-scale));
+    border-radius: calc(22px * var(--ui-scale)) calc(22px * var(--ui-scale)) 0 0;
+  }
+  .modalRow{
+    padding: calc(12px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
+    gap: calc(12px * var(--ui-scale));
+  }
+
+  /* hints */
+  .hint, .summaryBox{
+    font-size: calc(14px * var(--ui-scale));
   }
 }
