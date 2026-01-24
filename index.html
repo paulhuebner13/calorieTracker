@@ -2,32 +2,29 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0e0f12" />
   <title>Tracker</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="topbar__title">Tracker</div>
-  </header>
-
   <main class="content">
     <!-- DAY TAB -->
     <section class="tab" id="tab-day" data-tab="day">
-      <div class="card">
+      <div class="card card--hero">
         <div class="row row--space row--top">
           <div class="metrics3">
-            <div class="metric">
+            <div class="metric metric--kcal">
               <div class="metric__label">kcal</div>
               <div class="metric__value" id="dayKcalValue">0</div>
               <div class="metric__sub" id="dayKcalPct">0%</div>
             </div>
-            <div class="metric">
+            <div class="metric metric--protein">
               <div class="metric__label">Protein</div>
               <div class="metric__value" id="dayProteinValue">0 g</div>
               <div class="metric__sub" id="dayProteinPct">0%</div>
             </div>
-            <div class="metric">
+            <div class="metric metric--price">
               <div class="metric__label">Preis</div>
               <div class="metric__value" id="dayPriceValue">€ 0,00</div>
               <div class="metric__sub" id="dayPricePct">0%</div>
@@ -35,7 +32,7 @@
           </div>
 
           <div class="sideActions">
-            <button class="btn btn--ghost" id="btnOpenGoals">Ziele</button>
+            <button class="btn btn--ghost btn--big" id="btnOpenGoals">Ziele</button>
           </div>
         </div>
 
@@ -61,12 +58,12 @@
       </div>
 
       <div class="card">
-        <div class="row row--space">
+        <div class="row row--space row--stackMobile">
           <div class="h2">Tag</div>
-          <div class="row wrap">
-            <button class="btn" id="btnAddIngredientToDay">Zutat hinzufügen</button>
-            <button class="btn" id="btnAddRecipeToDay">Gericht hinzufügen</button>
-            <button class="btn btn--danger" id="btnClearDay">Tag leeren</button>
+          <div class="row wrap actionsRow">
+            <button class="btn btn--big" id="btnAddIngredientToDay">Zutat hinzufügen</button>
+            <button class="btn btn--big" id="btnAddRecipeToDay">Gericht hinzufügen</button>
+            <button class="btn btn--danger btn--big" id="btnClearDay">Tag leeren</button>
           </div>
         </div>
 
@@ -78,18 +75,19 @@
     <!-- RECIPES TAB -->
     <section class="tab hidden" id="tab-recipes" data-tab="recipes">
       <div class="card">
-        <div class="row row--space">
+        <div class="row row--space row--stackMobile">
           <div class="h2">Gerichte</div>
-          <button class="btn" id="btnNewRecipe">Neues Gericht</button>
+          <button class="btn btn--big" id="btnNewRecipe">Neues Gericht</button>
         </div>
+
         <div id="recipesList" class="list"></div>
         <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
       </div>
 
       <div class="card hidden" id="recipeEditorCard">
-        <div class="row row--space">
+        <div class="row row--space row--stackMobile">
           <div class="h2" id="recipeEditorTitle">Gericht</div>
-          <button class="btn btn--ghost" id="btnCloseRecipeEditor">Schließen</button>
+          <button class="btn btn--ghost btn--big" id="btnCloseRecipeEditor">Schließen</button>
         </div>
 
         <form id="recipeForm">
@@ -98,17 +96,17 @@
             <input type="text" id="recipeName" placeholder="z.B. Hafer Bowl" required />
           </label>
 
-          <div class="row row--space">
+          <div class="row row--space row--stackMobile">
             <div class="h3">Zutaten</div>
-            <button class="btn btn--ghost" type="button" id="btnAddIngredientToRecipe">Zutat hinzufügen</button>
+            <button class="btn btn--ghost btn--big" type="button" id="btnAddIngredientToRecipe">Zutat hinzufügen</button>
           </div>
 
           <div id="recipeIngredients" class="list"></div>
           <div class="hint" id="recipeIngredientsHint">Noch keine Zutaten im Gericht.</div>
 
           <div class="row wrap">
-            <button class="btn" type="submit">Speichern</button>
-            <button class="btn btn--danger" type="button" id="btnDeleteRecipe">Löschen</button>
+            <button class="btn btn--big" type="submit">Speichern</button>
+            <button class="btn btn--danger btn--big" type="button" id="btnDeleteRecipe">Löschen</button>
           </div>
         </form>
 
@@ -120,9 +118,9 @@
     <!-- INGREDIENTS TAB -->
     <section class="tab hidden" id="tab-ingredients" data-tab="ingredients">
       <div class="card">
-        <div class="row row--space">
+        <div class="row row--space row--stackMobile">
           <div class="h2">Zutaten</div>
-          <button class="btn" id="btnNewIngredient">Neue Zutat</button>
+          <button class="btn btn--big" id="btnNewIngredient">Neue Zutat</button>
         </div>
 
         <div id="ingredientsList" class="list"></div>
@@ -130,9 +128,9 @@
       </div>
 
       <div class="card hidden" id="ingredientEditorCard">
-        <div class="row row--space">
+        <div class="row row--space row--stackMobile">
           <div class="h2" id="ingredientEditorTitle">Zutat</div>
-          <button class="btn btn--ghost" id="btnCloseIngredientEditor">Schließen</button>
+          <button class="btn btn--ghost btn--big" id="btnCloseIngredientEditor">Schließen</button>
         </div>
 
         <form id="ingredientForm">
@@ -180,8 +178,8 @@
           </label>
 
           <div class="row wrap">
-            <button class="btn" type="submit">Speichern</button>
-            <button class="btn btn--danger" type="button" id="btnDeleteIngredient">Löschen</button>
+            <button class="btn btn--big" type="submit">Speichern</button>
+            <button class="btn btn--danger btn--big" type="button" id="btnDeleteIngredient">Löschen</button>
           </div>
         </form>
 
@@ -201,9 +199,9 @@
   <!-- Generic modal -->
   <div class="modal hidden" id="modal">
     <div class="modal__sheet">
-      <div class="row row--space">
+      <div class="row row--space row--stackMobile">
         <div class="h2" id="modalTitle">Auswahl</div>
-        <button class="btn btn--ghost" id="modalClose">Schließen</button>
+        <button class="btn btn--ghost btn--big" id="modalClose">Schließen</button>
       </div>
       <div class="modal__content" id="modalContent"></div>
     </div>
