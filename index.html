@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__title">Tracker</div>
+  </header>
+
+  <main class="content">
+    <!-- DAY TAB -->
+    <section class="tab" id="tab-day" data-tab="day">
+      <div class="card">
+        <div class="row row--space row--top">
+          <div class="metrics3">
+            <div class="metric">
+              <div class="metric__label">kcal</div>
+              <div class="metric__value" id="dayKcalValue">0</div>
+              <div class="metric__sub" id="dayKcalPct">0%</div>
+            </div>
+            <div class="metric">
+              <div class="metric__label">Protein</div>
+              <div class="metric__value" id="dayProteinValue">0 g</div>
+              <div class="metric__sub" id="dayProteinPct">0%</div>
+            </div>
+            <div class="metric">
+              <div class="metric__label">Preis</div>
+              <div class="metric__value" id="dayPriceValue">€ 0,00</div>
+              <div class="metric__sub" id="dayPricePct">0%</div>
+            </div>
+          </div>
+
+          <div class="sideActions">
+            <button class="btn btn--ghost" id="btnOpenGoals">Ziele</button>
+          </div>
+        </div>
+
+        <div class="miniRow">
+          <div class="miniMetric">
+            <div class="miniMetric__label">Kohlenhydrate</div>
+            <div class="miniMetric__value" id="dayCarbsValue">0,0 g</div>
+          </div>
+          <div class="miniMetric">
+            <div class="miniMetric__label">Fett</div>
+            <div class="miniMetric__value" id="dayFatValue">0,0 g</div>
+          </div>
+
+          <div class="miniData">
+            <div class="miniMetric__label">Daten</div>
+            <div class="miniData__buttons">
+              <button class="btn btn--tiny btn--ghost" id="btnExport">Export</button>
+              <button class="btn btn--tiny btn--ghost" id="btnImport">Import</button>
+              <input type="file" id="importFile" accept="application/json" class="hidden" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row row--space">
+          <div class="h2">Tag</div>
+          <div class="row wrap">
+            <button class="btn" id="btnAddIngredientToDay">Zutat hinzufügen</button>
+            <button class="btn" id="btnAddRecipeToDay">Gericht hinzufügen</button>
+            <button class="btn btn--danger" id="btnClearDay">Tag leeren</button>
+          </div>
+        </div>
+
+        <div id="dayEntries" class="list"></div>
+        <div class="hint" id="dayEmptyHint">Noch keine Einträge.</div>
+      </div>
+    </section>
+
+    <!-- RECIPES TAB -->
+    <section class="tab hidden" id="tab-recipes" data-tab="recipes">
+      <div class="card">
+        <div class="row row--space">
+          <div class="h2">Gerichte</div>
+          <button class="btn" id="btnNewRecipe">Neues Gericht</button>
+        </div>
+        <div id="recipesList" class="list"></div>
+        <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
+      </div>
+
+      <div class="card hidden" id="recipeEditorCard">
+        <div class="row row--space">
+          <div class="h2" id="recipeEditorTitle">Gericht</div>
+          <button class="btn btn--ghost" id="btnCloseRecipeEditor">Schließen</button>
+        </div>
+
+        <form id="recipeForm">
+          <label class="field">
+            <span>Name</span>
+            <input type="text" id="recipeName" placeholder="z.B. Hafer Bowl" required />
+          </label>
+
+          <div class="row row--space">
+            <div class="h3">Zutaten</div>
+            <button class="btn btn--ghost" type="button" id="btnAddIngredientToRecipe">Zutat hinzufügen</button>
+          </div>
+
+          <div id="recipeIngredients" class="list"></div>
+          <div class="hint" id="recipeIngredientsHint">Noch keine Zutaten im Gericht.</div>
+
+          <div class="row wrap">
+            <button class="btn" type="submit">Speichern</button>
+            <button class="btn btn--danger" type="button" id="btnDeleteRecipe">Löschen</button>
+          </div>
+        </form>
+
+        <div class="divider"></div>
+        <div class="summaryBox" id="recipeSummary"></div>
+      </div>
+    </section>
+
+    <!-- INGREDIENTS TAB -->
+    <section class="tab hidden" id="tab-ingredients" data-tab="ingredients">
+      <div class="card">
+        <div class="row row--space">
+          <div class="h2">Zutaten</div>
+          <button class="btn" id="btnNewIngredient">Neue Zutat</button>
+        </div>
+
+        <div id="ingredientsList" class="list"></div>
+        <div class="hint" id="ingredientsEmptyHint">Noch keine Zutaten.</div>
+      </div>
+
+      <div class="card hidden" id="ingredientEditorCard">
+        <div class="row row--space">
+          <div class="h2" id="ingredientEditorTitle">Zutat</div>
+          <button class="btn btn--ghost" id="btnCloseIngredientEditor">Schließen</button>
+        </div>
+
+        <form id="ingredientForm">
+          <label class="field">
+            <span>Name</span>
+            <input type="text" id="ingName" required placeholder="z.B. Haferflocken" />
+          </label>
+
+          <label class="field">
+            <span>Marke oder Hersteller</span>
+            <input type="text" id="ingBrand" placeholder="z.B. Hofer" />
+          </label>
+
+          <label class="field">
+            <span>Angaben pro</span>
+            <select id="ingUnitType">
+              <option value="100g">100 g</option>
+              <option value="100ml">100 ml</option>
+              <option value="piece">Stück</option>
+            </select>
+          </label>
+
+          <div class="grid2">
+            <label class="field">
+              <span>kcal</span>
+              <input type="text" inputmode="decimal" id="ingKcal" required placeholder="z.B. 389" />
+            </label>
+            <label class="field">
+              <span>Protein (g)</span>
+              <input type="text" inputmode="decimal" id="ingProtein" required placeholder="z.B. 13" />
+            </label>
+            <label class="field">
+              <span>Kohlenhydrate (g)</span>
+              <input type="text" inputmode="decimal" id="ingCarbs" required placeholder="z.B. 66" />
+            </label>
+            <label class="field">
+              <span>Fett (g)</span>
+              <input type="text" inputmode="decimal" id="ingFat" required placeholder="z.B. 7" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Preis (Euro) pro Basis</span>
+            <input type="text" inputmode="decimal" id="ingPrice" required placeholder="z.B. 0,19" />
+          </label>
+
+          <div class="row wrap">
+            <button class="btn" type="submit">Speichern</button>
+            <button class="btn btn--danger" type="button" id="btnDeleteIngredient">Löschen</button>
+          </div>
+        </form>
+
+        <div class="divider"></div>
+        <div class="summaryBox" id="ingredientSummary"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Tabs -->
+  <nav class="tabs">
+    <button class="tabBtn tabBtn--active" data-nav="day">Tag</button>
+    <button class="tabBtn" data-nav="recipes">Gerichte</button>
+    <button class="tabBtn" data-nav="ingredients">Zutaten</button>
+  </nav>
+
+  <!-- Generic modal -->
+  <div class="modal hidden" id="modal">
+    <div class="modal__sheet">
+      <div class="row row--space">
+        <div class="h2" id="modalTitle">Auswahl</div>
+        <button class="btn btn--ghost" id="modalClose">Schließen</button>
+      </div>
+      <div class="modal__content" id="modalContent"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
