@@ -434,239 +434,131 @@ body{
   }
 }
 
-
-/* PHONE MODE: touch devices (Android, iPhone) */
+/* ===== PHONE (Android/iPhone): one single source of truth ===== */
 @media (pointer: coarse) {
   :root{
-    /* overall scale up */
-    --card-radius: 22px;
+    --ui-scale: var(--ui-scale-phone); /* 1.6 */
   }
 
-  body{
-    font-size: 18px; /* bigger base */
-  }
-
-  .content{
-    max-width: none;           /* use full width */
-    margin: 0;
-    padding-left: 14px;
-    padding-right: 14px;
-  }
-
-  .card{
-    border-radius: 22px;
-    padding: 16px;
-    margin: 14px 0;
-  }
-
-  /* make the big numbers REALLY big */
-  .metric__value{
-    font-size: clamp(40px, 10vw, 64px);
-  }
-  .metric__label{
-    font-size: 16px;
-  }
-  .metric__sub{
-    font-size: 16px;
-  }
-
-  .miniMetric__value{
-    font-size: 20px;
-  }
-  .miniMetric__label{
-    font-size: 14px;
-  }
-
-  /* buttons: bigger tap targets */
-  .btn{
-    min-height: 58px;
-    font-size: 17px;
-    padding: 16px 18px;
-    border-radius: 18px;
-  }
-  .btn--tiny{
-    min-height: 46px;
-    font-size: 15px;
-    padding: 12px 14px;
-    border-radius: 16px;
-  }
-
-  /* list items larger */
-  .item{
-    padding: 16px;
-    border-radius: 18px;
-  }
-  .item__title{
-    font-size: 17px;
-  }
-  .item__sub, .item__right{
-    font-size: 15px;
-  }
-
-  /* bottom tabs bigger */
-  .tabBtn{
-    min-height: 62px;
-    font-size: 17px;
-    border-radius: 20px;
-    padding: 16px 10px;
-  }
-
-    /* === EXTRA BIG TOP METRICS (kcal / protein / price) === */
-  .metric__label{
-    font-size: calc(18px * var(--ui-scale)); /* bigger "kcal / protein / preis" */
-  }
-
-  .metric__value{
-    font-size: clamp(64px, 14vw, 92px); /* ~2x bigger on phone */
-    margin-top: calc(10px * var(--ui-scale));
-  }
-
-  .metric__sub{
-    font-size: calc(18px * var(--ui-scale)); /* bigger percent */
-    margin-top: calc(10px * var(--ui-scale));
-  }
-
-  /* === KH / FAT: make only the numbers bigger === */
-  .miniMetric__value{
-    font-size: calc(26px * var(--ui-scale));
-    font-weight: 980;
-  }
-
-  /* === Bottom tabs: slightly bigger === */
-  .tabBtn{
-    min-height: calc(66px * var(--ui-scale));
-    font-size: calc(18px * var(--ui-scale));
-    padding: calc(16px * var(--ui-scale)) calc(12px * var(--ui-scale));
-  }
-
-  .h2{
-    font-size: calc(22px * var(--ui-scale));
-  }
-}
-
-
-/* PHONE SCALE: make EVERYTHING (except the big numbers) about 1.6x bigger */
-@media (pointer: coarse) {
-  :root{
-    --ui-scale: var(--ui-scale-phone);
-  }
-
-  /* remove max width so we use full screen */
+  /* Use full width */
   .content{
     max-width: none;
     margin: 0;
   }
 
-  /* scale typography (general) */
-  body{
-    font-size: calc(16px * var(--ui-scale));
+  /* Cards spacing */
+  .card{
+    padding: calc(16px * var(--ui-scale));
+    border-radius: calc(20px * var(--ui-scale));
+    margin: calc(14px * var(--ui-scale)) 0;
   }
 
-  .h2{
-    font-size: calc(18px * var(--ui-scale));
-  }
-  .h3{
-    font-size: calc(15px * var(--ui-scale));
+  /* Headings */
+  .h2{ font-size: calc(22px * var(--ui-scale)); }
+  .h3{ font-size: calc(16px * var(--ui-scale)); }
+
+  /* ===== TOP METRICS: make them MUCH bigger ===== */
+  .metric{
+    padding: calc(18px * var(--ui-scale));
+    border-radius: calc(18px * var(--ui-scale));
+    min-height: calc(140px * var(--ui-scale));
   }
 
-  /* labels / small texts */
   .metric__label{
-    font-size: calc(14px * var(--ui-scale));
-  }
-  .metric__sub{
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(18px * var(--ui-scale));
+    font-weight: 900;
   }
 
-  /* IMPORTANT: keep big numbers as-is (you said they are good) */
   .metric__value{
-    font-size: unset; /* do not scale here */
+    font-size: clamp(64px, 15vw, 96px); /* clearly bigger */
+    margin-top: calc(10px * var(--ui-scale));
   }
 
-  /* mini cards (KH/Fett/Daten) */
+  .metric__sub{
+    font-size: calc(18px * var(--ui-scale));
+    margin-top: calc(10px * var(--ui-scale));
+  }
+
+  /* ===== MINI CARDS: only numbers bigger ===== */
   .miniMetric__label{
-    font-size: calc(13px * var(--ui-scale));
+    font-size: calc(14px * var(--ui-scale));
   }
   .miniMetric__value{
-    font-size: calc(18px * var(--ui-scale));
+    font-size: calc(28px * var(--ui-scale));
   }
 
-  /* buttons */
+  /* Data box */
+  .miniData .miniMetric__label{
+    font-size: calc(14px * var(--ui-scale));
+  }
+
+  /* Buttons */
   .btn{
-    min-height: calc(52px * var(--ui-scale));
-    font-size: calc(16px * var(--ui-scale));
-    padding: calc(14px * var(--ui-scale)) calc(16px * var(--ui-scale));
-    border-radius: calc(16px * var(--ui-scale));
+    min-height: calc(60px * var(--ui-scale));
+    font-size: calc(18px * var(--ui-scale));
+    padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale));
+    border-radius: calc(18px * var(--ui-scale));
   }
   .btn--tiny{
-    min-height: calc(42px * var(--ui-scale));
-    font-size: calc(14px * var(--ui-scale));
-    padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale));
-    border-radius: calc(14px * var(--ui-scale));
+    min-height: calc(48px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
+    padding: calc(12px * var(--ui-scale)) calc(14px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
   }
 
-  /* list items */
+  /* List */
   .item{
-    padding: calc(14px * var(--ui-scale));
-    border-radius: calc(16px * var(--ui-scale));
-    gap: calc(8px * var(--ui-scale));
+    padding: calc(18px * var(--ui-scale));
+    border-radius: calc(18px * var(--ui-scale));
+    gap: calc(10px * var(--ui-scale));
   }
   .item__title{
+    font-size: calc(18px * var(--ui-scale));
+  }
+  .item__sub, .item__right{
     font-size: calc(16px * var(--ui-scale));
   }
-  .item__sub{
-    font-size: calc(14px * var(--ui-scale));
-  }
-  .item__right{
-    font-size: calc(14px * var(--ui-scale));
-  }
 
-  /* inputs, selects, search fields */
+  /* Inputs */
   .field span{
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
   }
   .field input,
   .field select,
   .searchInput{
-    min-height: calc(54px * var(--ui-scale));
-    font-size: calc(16px * var(--ui-scale));
-    padding: calc(14px * var(--ui-scale)) calc(14px * var(--ui-scale));
-    border-radius: calc(16px * var(--ui-scale));
-  }
-
-  /* cards spacing */
-  .card{
-    padding: calc(14px * var(--ui-scale));
-    border-radius: calc(18px * var(--ui-scale));
-    margin: calc(12px * var(--ui-scale)) 0;
-  }
-
-  /* bottom tabs */
-  .tabBtn{
-    min-height: calc(56px * var(--ui-scale));
-    font-size: calc(16px * var(--ui-scale));
-    padding: calc(14px * var(--ui-scale)) calc(10px * var(--ui-scale));
+    min-height: calc(60px * var(--ui-scale));
+    font-size: calc(18px * var(--ui-scale));
+    padding: calc(16px * var(--ui-scale));
     border-radius: calc(18px * var(--ui-scale));
   }
+
+  /* Bottom tabs */
   .tabs{
-    padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale))
-      calc(10px * var(--ui-scale) + env(safe-area-inset-bottom))
+    gap: calc(12px * var(--ui-scale));
+    padding: calc(12px * var(--ui-scale)) calc(12px * var(--ui-scale))
+      calc(12px * var(--ui-scale) + env(safe-area-inset-bottom))
       calc(12px * var(--ui-scale));
-    gap: calc(10px * var(--ui-scale));
   }
 
-  /* modal */
+  .tabBtn{
+    min-height: calc(72px * var(--ui-scale));
+    font-size: calc(18px * var(--ui-scale));
+    padding: calc(18px * var(--ui-scale)) calc(12px * var(--ui-scale));
+    border-radius: calc(22px * var(--ui-scale));
+  }
+
+  /* Modal */
   .modal__sheet{
-    padding: calc(14px * var(--ui-scale));
+    padding: calc(16px * var(--ui-scale));
     border-radius: calc(22px * var(--ui-scale)) calc(22px * var(--ui-scale)) 0 0;
   }
   .modalRow{
-    padding: calc(12px * var(--ui-scale));
-    border-radius: calc(16px * var(--ui-scale));
+    padding: calc(14px * var(--ui-scale));
+    border-radius: calc(18px * var(--ui-scale));
     gap: calc(12px * var(--ui-scale));
   }
 
-  /* hints */
   .hint, .summaryBox{
-    font-size: calc(14px * var(--ui-scale));
+    font-size: calc(16px * var(--ui-scale));
   }
 }
