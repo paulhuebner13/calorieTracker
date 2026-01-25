@@ -77,7 +77,6 @@ function amountLabel(unitType, amount) {
 }
 
 function ratiosText(price, kcal, protein) {
-  // price per 100 g protein, price per 100 kcal
   const p100prot = (protein > 0) ? (price / protein) * 100 : NaN;
   const p100kcal = (kcal > 0) ? (price / kcal) * 100 : NaN;
 
@@ -178,8 +177,6 @@ function setTab(name) {
   for (const btn of tabButtons) {
     btn.classList.toggle("tabBtn--active", btn.dataset.nav === name);
   }
-  if (name !== "ingredients") closeIngredientEditor();
-  if (name !== "recipes") closeRecipeEditor();
   renderAll();
 }
 
@@ -250,8 +247,6 @@ importFile.addEventListener("change", async () => {
 
     state = parsed;
     saveState();
-    closeIngredientEditor();
-    closeRecipeEditor();
     closeModal();
     renderAll();
     setTab("day");
@@ -331,30 +326,32 @@ btnOpenGoals.addEventListener("click", () => {
   });
 });
 
-/* Ingredients list + editor */
+/* ===== SEARCH (tabs) ===== */
+const ingredientsSearch = $("#ingredientsSearch");
+const recipesSearch = $("#recipesSearch");
+
+let ingredientsFilter = "";
+let recipesFilter = "";
+
+if (ingredientsSearch) {
+  ingredientsSearch.addEventListener("input", () => {
+    ingredientsFilter = (ingredientsSearch.value || "").trim().toLowerCase();
+    renderIngredients();
+  });
+}
+if (recipesSearch) {
+  recipesSearch.addEventListener("input", () => {
+    recipesFilter = (recipesSearch.value || "").trim().toLowerCase();
+    renderRecipes();
+  });
+}
+
+/* Ingredients list (editor now in modal) */
 const ingredientsList = $("#ingredientsList");
 const ingredientsEmptyHint = $("#ingredientsEmptyHint");
 const btnNewIngredient = $("#btnNewIngredient");
-const ingredientEditorCard = $("#ingredientEditorCard");
-const ingredientEditorTitle = $("#ingredientEditorTitle");
-const btnCloseIngredientEditor = $("#btnCloseIngredientEditor");
-const ingredientForm = $("#ingredientForm");
-const btnDeleteIngredient = $("#btnDeleteIngredient");
 
-const ingName = $("#ingName");
-const ingBrand = $("#ingBrand");
-const ingUnitType = $("#ingUnitType");
-const ingKcal = $("#ingKcal");
-const ingProtein = $("#ingProtein");
-const ingCarbs = $("#ingCarbs");
-const ingFat = $("#ingFat");
-const ingPrice = $("#ingPrice");
-const ingredientSummary = $("#ingredientSummary");
-
-let editingIngredientId = null;
-
-btnNewIngredient.addEventListener("click", () => openIngredientEditor(null));
-btnCloseIngredientEditor.addEventListener("click", closeIngredientEditor);
+btnNewIngredient.addEventListener("click", () => openIngredientEditorModal(null));
 
 function ingredientSummaryText(ing) {
   const brand = ing.brand ? `, ${ing.brand}` : "";
@@ -363,166 +360,368 @@ function ingredientSummaryText(ing) {
   return `${ing.name}${brand} ${baseLine}\n${detail}`;
 }
 
-function openIngredientEditor(id) {
-  editingIngredientId = id;
-  ingredientEditorCard.classList.remove("hidden");
+function openIngredientEditorModal(id) {
+  const editingId = id;
 
-  if (id) {
-    const ing = state.ingredients.find(x => x.id === id);
-    ingredientEditorTitle.textContent = "Zutat bearbeiten";
-    btnDeleteIngredient.classList.remove("hidden");
+  openModal(editingId ? "Zutat bearbeiten" : "Neue Zutat", (container) => {
+    const form = document.createElement("form");
+    form.className = "modalRow";
 
-    ingName.value = ing.name ?? "";
-    ingBrand.value = ing.brand ?? "";
-    ingUnitType.value = ing.unitType ?? "100g";
-    ingKcal.value = String(ing.kcal ?? "");
-    ingProtein.value = String(ing.protein ?? "");
-    ingCarbs.value = String(ing.carbs ?? "");
-    ingFat.value = String(ing.fat ?? "");
-    ingPrice.value = String(ing.price ?? "");
+    const ing = editingId ? state.ingredients.find(x => x.id === editingId) : null;
 
-    ingredientSummary.textContent = ingredientSummaryText(ing);
-  } else {
-    ingredientEditorTitle.textContent = "Neue Zutat";
-    btnDeleteIngredient.classList.add("hidden");
+    form.innerHTML = `
+      <label class="field">
+        <span>Name</span>
+        <input type="text" id="mIngName" required placeholder="z.B. Haferflocken" />
+      </label>
 
-    ingName.value = "";
-    ingBrand.value = "";
-    ingUnitType.value = "100g";
-    ingKcal.value = "";
-    ingProtein.value = "";
-    ingCarbs.value = "";
-    ingFat.value = "";
-    ingPrice.value = "";
-    ingredientSummary.textContent = "";
-  }
+      <label class="field">
+        <span>Marke oder Hersteller</span>
+        <input type="text" id="mIngBrand" placeholder="z.B. Hofer" />
+      </label>
+
+      <label class="field">
+        <span>Angaben pro</span>
+        <select id="mIngUnitType">
+          <option value="100g">100 g</option>
+          <option value="100ml">100 ml</option>
+          <option value="piece">Stück</option>
+        </select>
+      </label>
+
+      <div class="grid2">
+        <label class="field">
+          <span>kcal</span>
+          <input type="text" inputmode="decimal" id="mIngKcal" required placeholder="z.B. 389" />
+        </label>
+        <label class="field">
+          <span>Protein (g)</span>
+          <input type="text" inputmode="decimal" id="mIngProtein" required placeholder="z.B. 13" />
+        </label>
+        <label class="field">
+          <span>Kohlenhydrate (g)</span>
+          <input type="text" inputmode="decimal" id="mIngCarbs" required placeholder="z.B. 66" />
+        </label>
+        <label class="field">
+          <span>Fett (g)</span>
+          <input type="text" inputmode="decimal" id="mIngFat" required placeholder="z.B. 7" />
+        </label>
+      </div>
+
+      <label class="field">
+        <span>Preis (Euro) pro Basis</span>
+        <input type="text" inputmode="decimal" id="mIngPrice" required placeholder="z.B. 0,19" />
+      </label>
+
+      <div class="row wrap">
+        <button class="btn btn--big" type="submit">Speichern</button>
+        ${editingId ? `<button class="btn btn--danger btn--big" type="button" id="mIngDelete">Löschen</button>` : ``}
+      </div>
+
+      <div class="divider"></div>
+      <div class="summaryBox" id="mIngSummary"></div>
+    `;
+
+    container.appendChild(form);
+
+    const nameEl = form.querySelector("#mIngName");
+    const brandEl = form.querySelector("#mIngBrand");
+    const unitEl = form.querySelector("#mIngUnitType");
+    const kcalEl = form.querySelector("#mIngKcal");
+    const protEl = form.querySelector("#mIngProtein");
+    const carbsEl = form.querySelector("#mIngCarbs");
+    const fatEl = form.querySelector("#mIngFat");
+    const priceEl = form.querySelector("#mIngPrice");
+    const summaryEl = form.querySelector("#mIngSummary");
+
+    if (ing) {
+      nameEl.value = ing.name ?? "";
+      brandEl.value = ing.brand ?? "";
+      unitEl.value = ing.unitType ?? "100g";
+      kcalEl.value = String(ing.kcal ?? "");
+      protEl.value = String(ing.protein ?? "");
+      carbsEl.value = String(ing.carbs ?? "");
+      fatEl.value = String(ing.fat ?? "");
+      priceEl.value = String(ing.price ?? "");
+      summaryEl.textContent = ingredientSummaryText(ing);
+    } else {
+      summaryEl.textContent = "";
+    }
+
+    function updateSummary() {
+      const tmp = {
+        name: nameEl.value.trim(),
+        brand: brandEl.value.trim(),
+        unitType: unitEl.value,
+        kcal: parseNumber(kcalEl.value) || 0,
+        protein: parseNumber(protEl.value) || 0,
+        carbs: parseNumber(carbsEl.value) || 0,
+        fat: parseNumber(fatEl.value) || 0,
+        price: parseNumber(priceEl.value) || 0
+      };
+      if (!tmp.name) {
+        summaryEl.textContent = "";
+        return;
+      }
+      summaryEl.textContent = ingredientSummaryText(tmp);
+    }
+
+    [nameEl, brandEl, unitEl, kcalEl, protEl, carbsEl, fatEl, priceEl].forEach(el => {
+      el.addEventListener("input", updateSummary);
+      el.addEventListener("change", updateSummary);
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = nameEl.value.trim();
+      const brand = brandEl.value.trim();
+      const unitType = unitEl.value;
+
+      const kcal = parseNumber(kcalEl.value);
+      const protein = parseNumber(protEl.value);
+      const carbs = parseNumber(carbsEl.value);
+      const fat = parseNumber(fatEl.value);
+      const price = parseNumber(priceEl.value);
+
+      if (!name) return alert("Name fehlt.");
+      if (!["100g", "100ml", "piece"].includes(unitType)) return alert("Ungültige Einheit.");
+
+      for (const [label, val] of [["kcal", kcal], ["Protein", protein], ["KH", carbs], ["Fett", fat], ["Preis", price]]) {
+        if (!Number.isFinite(val) || val < 0) return alert(`${label} muss eine Zahl >= 0 sein.`);
+      }
+
+      if (editingId) {
+        const target = state.ingredients.find(x => x.id === editingId);
+        if (!target) return;
+        target.name = name;
+        target.brand = brand;
+        target.unitType = unitType;
+        target.kcal = kcal;
+        target.protein = protein;
+        target.carbs = carbs;
+        target.fat = fat;
+        target.price = price;
+      } else {
+        state.ingredients.push({ id: uid(), name, brand, unitType, kcal, protein, carbs, fat, price });
+      }
+
+      saveState();
+      closeModal();
+      renderAll();
+    });
+
+    const delBtn = form.querySelector("#mIngDelete");
+    if (delBtn) {
+      delBtn.addEventListener("click", () => {
+        const target = state.ingredients.find(x => x.id === editingId);
+        if (!target) return;
+
+        const usedInRecipes = state.recipes.some(r => r.items.some(it => it.ingredientId === target.id));
+        if (usedInRecipes) {
+          alert("Diese Zutat ist in einem Gericht enthalten. Entferne sie zuerst aus den Gerichten.");
+          return;
+        }
+
+        for (const dateKey of Object.keys(state.dayLogs)) {
+          state.dayLogs[dateKey] = (state.dayLogs[dateKey] || []).filter(e => !(e.type === "ingredient" && e.refId === target.id));
+        }
+
+        state.ingredients = state.ingredients.filter(x => x.id !== target.id);
+        saveState();
+        closeModal();
+        renderAll();
+      });
+    }
+  });
 }
 
-function closeIngredientEditor() {
-  ingredientEditorCard.classList.add("hidden");
-  editingIngredientId = null;
-}
-
-ingredientForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-
-  const name = ingName.value.trim();
-  const brand = ingBrand.value.trim();
-  const unitType = ingUnitType.value;
-
-  const kcal = parseNumber(ingKcal.value);
-  const protein = parseNumber(ingProtein.value);
-  const carbs = parseNumber(ingCarbs.value);
-  const fat = parseNumber(ingFat.value);
-  const price = parseNumber(ingPrice.value);
-
-  if (!name) return alert("Name fehlt.");
-  if (!["100g", "100ml", "piece"].includes(unitType)) return alert("Ungültige Einheit.");
-
-  for (const [label, val] of [["kcal", kcal], ["Protein", protein], ["KH", carbs], ["Fett", fat], ["Preis", price]]) {
-    if (!Number.isFinite(val) || val < 0) return alert(`${label} muss eine Zahl >= 0 sein.`);
-  }
-
-  if (editingIngredientId) {
-    const ing = state.ingredients.find(x => x.id === editingIngredientId);
-    ing.name = name;
-    ing.brand = brand;
-    ing.unitType = unitType;
-    ing.kcal = kcal;
-    ing.protein = protein;
-    ing.carbs = carbs;
-    ing.fat = fat;
-    ing.price = price;
-  } else {
-    state.ingredients.push({ id: uid(), name, brand, unitType, kcal, protein, carbs, fat, price });
-  }
-
-  saveState();
-  closeIngredientEditor();
-  renderAll();
-});
-
-btnDeleteIngredient.addEventListener("click", () => {
-  if (!editingIngredientId) return;
-  const ing = state.ingredients.find(x => x.id === editingIngredientId);
-  if (!ing) return;
-
-  const usedInRecipes = state.recipes.some(r => r.items.some(it => it.ingredientId === ing.id));
-  if (usedInRecipes) {
-    alert("Diese Zutat ist in einem Gericht enthalten. Entferne sie zuerst aus den Gerichten.");
-    return;
-  }
-
-  for (const dateKey of Object.keys(state.dayLogs)) {
-    state.dayLogs[dateKey] = (state.dayLogs[dateKey] || []).filter(e => !(e.type === "ingredient" && e.refId === ing.id));
-  }
-
-  state.ingredients = state.ingredients.filter(x => x.id !== ing.id);
-  saveState();
-  closeIngredientEditor();
-  renderAll();
-});
-
-/* Recipes list + editor */
+/* Recipes list (editor now in modal) */
 const recipesList = $("#recipesList");
 const recipesEmptyHint = $("#recipesEmptyHint");
 const btnNewRecipe = $("#btnNewRecipe");
-const recipeEditorCard = $("#recipeEditorCard");
-const recipeEditorTitle = $("#recipeEditorTitle");
-const btnCloseRecipeEditor = $("#btnCloseRecipeEditor");
-const recipeForm = $("#recipeForm");
-const recipeName = $("#recipeName");
-const recipeIngredients = $("#recipeIngredients");
-const recipeIngredientsHint = $("#recipeIngredientsHint");
-const btnAddIngredientToRecipe = $("#btnAddIngredientToRecipe");
-const btnDeleteRecipe = $("#btnDeleteRecipe");
-const recipeSummary = $("#recipeSummary");
 
 let editingRecipeId = null;
 
-btnNewRecipe.addEventListener("click", () => openRecipeEditor(null));
-btnCloseRecipeEditor.addEventListener("click", closeRecipeEditor);
+btnNewRecipe.addEventListener("click", () => openRecipeEditorModal(null));
 
 function resetRecipeDraft() {
   window.__recipeDraft = { id: "__draft", name: "", items: [] };
 }
 resetRecipeDraft();
 
-function openRecipeEditor(id) {
+function openRecipeEditorModal(id) {
   editingRecipeId = id;
-  recipeEditorCard.classList.remove("hidden");
 
   if (id) {
     const r = state.recipes.find(x => x.id === id);
     window.__recipeDraft = { id: r.id, name: r.name, items: r.items.map(x => ({ ...x })) };
-    recipeEditorTitle.textContent = "Gericht bearbeiten";
-    btnDeleteRecipe.classList.remove("hidden");
-    recipeName.value = r.name ?? "";
   } else {
     resetRecipeDraft();
-    recipeEditorTitle.textContent = "Neues Gericht";
-    btnDeleteRecipe.classList.add("hidden");
-    recipeName.value = "";
   }
 
-  renderRecipeEditorIngredients();
-  renderRecipeSummary();
+  openModal(id ? "Gericht bearbeiten" : "Neues Gericht", (container) => {
+    const form = document.createElement("form");
+    form.className = "modalRow";
+
+    form.innerHTML = `
+      <label class="field">
+        <span>Name</span>
+        <input type="text" id="mRecipeName" placeholder="z.B. Hafer Bowl" required />
+      </label>
+
+      <div class="row row--space row--stackMobile">
+        <div class="h3">Zutaten</div>
+        <button class="btn btn--ghost btn--big" type="button" id="mAddIngredientToRecipe">Zutat hinzufügen</button>
+      </div>
+
+      <div id="mRecipeIngredients" class="list"></div>
+      <div class="hint" id="mRecipeIngredientsHint">Noch keine Zutaten im Gericht.</div>
+
+      <div class="row wrap">
+        <button class="btn btn--big" type="submit">Speichern</button>
+        ${id ? `<button class="btn btn--danger btn--big" type="button" id="mDeleteRecipe">Löschen</button>` : ``}
+      </div>
+
+      <div class="divider"></div>
+      <div class="summaryBox" id="mRecipeSummary"></div>
+    `;
+
+    container.appendChild(form);
+
+    const nameEl = form.querySelector("#mRecipeName");
+    nameEl.value = window.__recipeDraft.name || "";
+
+    const listEl = form.querySelector("#mRecipeIngredients");
+    const hintEl = form.querySelector("#mRecipeIngredientsHint");
+    const summaryEl = form.querySelector("#mRecipeSummary");
+
+    function renderRecipeEditorIngredientsInModal() {
+      const r = window.__recipeDraft;
+      listEl.innerHTML = "";
+
+      if (!r.items || r.items.length === 0) {
+        hintEl.classList.remove("hidden");
+        summaryEl.textContent = "Noch keine Zutaten, keine Berechnung.";
+        return;
+      }
+      hintEl.classList.add("hidden");
+
+      r.items.forEach((it, idx) => {
+        const ing = state.ingredients.find(x => x.id === it.ingredientId);
+
+        const row = document.createElement("div");
+        row.className = "item";
+        row.style.cursor = "default";
+
+        if (!ing) {
+          row.innerHTML = `
+            <div class="item__top">
+              <div>
+                <div class="item__title">Unbekannte Zutat</div>
+                <div class="item__sub">Nicht gefunden</div>
+              </div>
+              <div class="item__right">${escapeHtml(String(it.amount))}</div>
+            </div>
+          `;
+        } else {
+          const a = calcIngredientTotals(ing, it.amount);
+          row.innerHTML = `
+            <div class="item__top">
+              <div>
+                <div class="item__title">${escapeHtml(ing.name)}</div>
+                <div class="item__sub">${escapeHtml(ing.brand || unitLabel(ing.unitType))}</div>
+              </div>
+              <div class="item__right">${escapeHtml(amountLabel(ing.unitType, it.amount))}</div>
+            </div>
+            <div class="item__sub">${escapeHtml(lineFull(a.price, a.kcal, a.protein, a.carbs, a.fat))}</div>
+          `;
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "row";
+        actions.style.marginTop = "8px";
+
+        const btnRemove = document.createElement("button");
+        btnRemove.className = "btn btn--danger";
+        btnRemove.type = "button";
+        btnRemove.textContent = "Entfernen";
+        btnRemove.addEventListener("click", () => {
+          window.__recipeDraft.items.splice(idx, 1);
+          renderRecipeEditorIngredientsInModal();
+        });
+
+        actions.appendChild(btnRemove);
+        row.appendChild(actions);
+        listEl.appendChild(row);
+      });
+
+      const tempRecipe = { id: r.id, name: r.name || "", items: r.items };
+      const t = calcRecipeTotals(tempRecipe);
+      summaryEl.textContent = `Summe Gericht:\n${lineFull(t.price, t.kcal, t.protein, t.carbs, t.fat)}`;
+    }
+
+    renderRecipeEditorIngredientsInModal();
+
+    const addBtn = form.querySelector("#mAddIngredientToRecipe");
+    addBtn.addEventListener("click", () => {
+      if (state.ingredients.length === 0) {
+        alert("Du brauchst zuerst Zutaten.");
+        return;
+      }
+      openIngredientPickerForRecipe(() => {
+        // reopen the recipe modal with updated draft
+        openRecipeEditorModal(editingRecipeId);
+      });
+    });
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const name = nameEl.value.trim();
+      if (!name) return alert("Name fehlt.");
+
+      const draft = window.__recipeDraft;
+      draft.name = name;
+
+      if (!draft.items || draft.items.length === 0) {
+        alert("Füge mindestens eine Zutat hinzu.");
+        return;
+      }
+
+      if (editingRecipeId) {
+        const idx = state.recipes.findIndex(x => x.id === editingRecipeId);
+        if (idx >= 0) state.recipes[idx] = { id: editingRecipeId, name: draft.name, items: draft.items };
+      } else {
+        state.recipes.push({ id: uid(), name: draft.name, items: draft.items });
+        resetRecipeDraft();
+      }
+
+      saveState();
+      closeModal();
+      renderAll();
+    });
+
+    const delBtn = form.querySelector("#mDeleteRecipe");
+    if (delBtn) {
+      delBtn.addEventListener("click", () => {
+        const r = state.recipes.find(x => x.id === editingRecipeId);
+        if (!r) return;
+
+        for (const dateKey of Object.keys(state.dayLogs)) {
+          state.dayLogs[dateKey] = (state.dayLogs[dateKey] || []).filter(e => !(e.type === "recipe" && e.refId === r.id));
+        }
+
+        state.recipes = state.recipes.filter(x => x.id !== r.id);
+        saveState();
+        closeModal();
+        renderAll();
+      });
+    }
+  });
 }
 
-function closeRecipeEditor() {
-  recipeEditorCard.classList.add("hidden");
-  editingRecipeId = null;
-}
-
-btnAddIngredientToRecipe.addEventListener("click", () => {
-  if (state.ingredients.length === 0) {
-    alert("Du brauchst zuerst Zutaten.");
-    return;
-  }
-  openIngredientPickerForRecipe();
-});
-
-function openIngredientPickerForRecipe() {
+function openIngredientPickerForRecipe(onDone) {
   openModal("Zutat hinzufügen", (container) => {
     const search = document.createElement("input");
     search.className = "searchInput";
@@ -575,8 +774,7 @@ function openIngredientPickerForRecipe() {
           }
           window.__recipeDraft.items.push({ ingredientId: ing.id, amount: n });
           closeModal();
-          renderRecipeEditorIngredients();
-          renderRecipeSummary();
+          if (typeof onDone === "function") onDone();
         });
         row.appendChild(btn);
 
@@ -596,121 +794,6 @@ function openIngredientPickerForRecipe() {
   });
 }
 
-function renderRecipeEditorIngredients() {
-  const r = window.__recipeDraft;
-  recipeIngredients.innerHTML = "";
-
-  if (!r.items || r.items.length === 0) {
-    recipeIngredientsHint.classList.remove("hidden");
-    return;
-  }
-  recipeIngredientsHint.classList.add("hidden");
-
-  r.items.forEach((it, idx) => {
-    const ing = state.ingredients.find(x => x.id === it.ingredientId);
-
-    const row = document.createElement("div");
-    row.className = "item";
-    row.style.cursor = "default";
-
-    if (!ing) {
-      row.innerHTML = `
-        <div class="item__top">
-          <div>
-            <div class="item__title">Unbekannte Zutat</div>
-            <div class="item__sub">Nicht gefunden</div>
-          </div>
-          <div class="item__right">${escapeHtml(String(it.amount))}</div>
-        </div>
-      `;
-    } else {
-      const a = calcIngredientTotals(ing, it.amount);
-      row.innerHTML = `
-        <div class="item__top">
-          <div>
-            <div class="item__title">${escapeHtml(ing.name)}</div>
-            <div class="item__sub">${escapeHtml(ing.brand || unitLabel(ing.unitType))}</div>
-          </div>
-          <div class="item__right">${escapeHtml(amountLabel(ing.unitType, it.amount))}</div>
-        </div>
-        <div class="item__sub">${escapeHtml(lineFull(a.price, a.kcal, a.protein, a.carbs, a.fat))}</div>
-      `;
-    }
-
-    const actions = document.createElement("div");
-    actions.className = "row";
-    actions.style.marginTop = "8px";
-
-    const btnRemove = document.createElement("button");
-    btnRemove.className = "btn btn--danger";
-    btnRemove.type = "button";
-    btnRemove.textContent = "Entfernen";
-    btnRemove.addEventListener("click", () => {
-      window.__recipeDraft.items.splice(idx, 1);
-      renderRecipeEditorIngredients();
-      renderRecipeSummary();
-    });
-
-    actions.appendChild(btnRemove);
-    row.appendChild(actions);
-    recipeIngredients.appendChild(row);
-  });
-}
-
-function renderRecipeSummary() {
-  const r = window.__recipeDraft;
-  if (!r.items || r.items.length === 0) {
-    recipeSummary.textContent = "Noch keine Zutaten, keine Berechnung.";
-    return;
-  }
-  const tempRecipe = { id: r.id, name: r.name || "", items: r.items };
-  const t = calcRecipeTotals(tempRecipe);
-
-  recipeSummary.textContent =
-    `Summe Gericht:\n${lineFull(t.price, t.kcal, t.protein, t.carbs, t.fat)}`;
-}
-
-recipeForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const name = recipeName.value.trim();
-  if (!name) return alert("Name fehlt.");
-
-  const draft = window.__recipeDraft;
-  draft.name = name;
-
-  if (!draft.items || draft.items.length === 0) {
-    alert("Füge mindestens eine Zutat hinzu.");
-    return;
-  }
-
-  if (editingRecipeId) {
-    const idx = state.recipes.findIndex(x => x.id === editingRecipeId);
-    if (idx >= 0) state.recipes[idx] = { id: editingRecipeId, name: draft.name, items: draft.items };
-  } else {
-    state.recipes.push({ id: uid(), name: draft.name, items: draft.items });
-    resetRecipeDraft();
-  }
-
-  saveState();
-  closeRecipeEditor();
-  renderAll();
-});
-
-btnDeleteRecipe.addEventListener("click", () => {
-  if (!editingRecipeId) return;
-  const r = state.recipes.find(x => x.id === editingRecipeId);
-  if (!r) return;
-
-  for (const dateKey of Object.keys(state.dayLogs)) {
-    state.dayLogs[dateKey] = (state.dayLogs[dateKey] || []).filter(e => !(e.type === "recipe" && e.refId === r.id));
-  }
-
-  state.recipes = state.recipes.filter(x => x.id !== r.id);
-  saveState();
-  closeRecipeEditor();
-  renderAll();
-});
-
 /* Day logging */
 const btnAddIngredientToDay = $("#btnAddIngredientToDay");
 const btnAddRecipeToDay = $("#btnAddRecipeToDay");
@@ -729,7 +812,6 @@ const dayCarbsValue = $("#dayCarbsValue");
 const dayCarbsPct = $("#dayCarbsPct");
 const dayFatValue = $("#dayFatValue");
 const dayFatPct = $("#dayFatPct");
-
 
 btnAddIngredientToDay.addEventListener("click", () => {
   if (state.ingredients.length === 0) {
@@ -1018,19 +1100,28 @@ function renderDay() {
   dayProteinValue.textContent = `${round1(totals.protein).replace(".", ",")}`;
   dayProteinPct.textContent = `${clampPct(Math.round((totals.protein / state.goals.protein) * 100))}%`;
 
-dayPriceValue.textContent = `${round2(totals.price)}`.replace(".", ",");
+  dayPriceValue.textContent = `${round2(totals.price)}`.replace(".", ",");
   dayPricePct.textContent = `${clampPct(Math.round((totals.price / state.goals.price) * 100))}%`;
 
   dayCarbsValue.textContent = `${round1(totals.carbs).replace(".", ",")}`;
-dayCarbsPct.textContent = `${clampPct(Math.round((totals.carbs / state.goals.carbs) * 100))}%`;
+  dayCarbsPct.textContent = `${clampPct(Math.round((totals.carbs / state.goals.carbs) * 100))}%`;
 
-dayFatValue.textContent = `${round1(totals.fat).replace(".", ",")}`;
-dayFatPct.textContent = `${clampPct(Math.round((totals.fat / state.goals.fat) * 100))}%`;
+  dayFatValue.textContent = `${round1(totals.fat).replace(".", ",")}`;
+  dayFatPct.textContent = `${clampPct(Math.round((totals.fat / state.goals.fat) * 100))}%`;
 }
 
 function renderIngredients() {
   ingredientsList.innerHTML = "";
-  const items = state.ingredients.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+  const items = state.ingredients
+    .slice()
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+    .filter(ing => {
+      if (!ingredientsFilter) return true;
+      const n = (ing.name || "").toLowerCase();
+      const b = (ing.brand || "").toLowerCase();
+      return n.includes(ingredientsFilter) || b.includes(ingredientsFilter);
+    });
 
   if (items.length === 0) ingredientsEmptyHint.classList.remove("hidden");
   else ingredientsEmptyHint.classList.add("hidden");
@@ -1038,7 +1129,7 @@ function renderIngredients() {
   for (const ing of items) {
     const row = document.createElement("div");
     row.className = "item";
-    row.addEventListener("click", () => openIngredientEditor(ing.id));
+    row.addEventListener("click", () => openIngredientEditorModal(ing.id));
 
     const brand = ing.brand ? ing.brand : "";
 
@@ -1059,7 +1150,14 @@ function renderIngredients() {
 
 function renderRecipes() {
   recipesList.innerHTML = "";
-  const items = state.recipes.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+  const items = state.recipes
+    .slice()
+    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
+    .filter(r => {
+      if (!recipesFilter) return true;
+      return (r.name || "").toLowerCase().includes(recipesFilter);
+    });
 
   if (items.length === 0) recipesEmptyHint.classList.remove("hidden");
   else recipesEmptyHint.classList.add("hidden");
@@ -1069,7 +1167,7 @@ function renderRecipes() {
 
     const row = document.createElement("div");
     row.className = "item";
-    row.addEventListener("click", () => openRecipeEditor(r.id));
+    row.addEventListener("click", () => openRecipeEditorModal(r.id));
 
     row.innerHTML = `
       <div class="item__top">

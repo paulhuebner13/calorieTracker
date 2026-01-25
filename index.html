@@ -92,11 +92,14 @@
     <section class="tab hidden" id="tab-recipes" data-tab="recipes">
       <div class="card">
         <div class="row row--space row--stackMobile">
-          <div class="h2">Gerichte</div>
-          <button class="btn btn--big" id="btnNewRecipe">Neues Gericht</button>
-        </div>
+  <div class="h2">Gerichte</div>
+  <button class="btn btn--big" id="btnNewRecipe">Neues Gericht</button>
+</div>
 
-        <div id="recipesList" class="list"></div>
+<input class="searchInput" id="recipesSearch" type="text" placeholder="Gerichte suchen..." inputmode="search" />
+
+<div id="recipesList" class="list"></div>
+
         <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
       </div>
 
@@ -138,6 +141,9 @@
           <div class="h2">Zutaten</div>
           <button class="btn btn--big" id="btnNewIngredient">Neue Zutat</button>
         </div>
+
+        <input class="searchInput" id="ingredientsSearch" type="text" placeholder="Zutaten suchen..." inputmode="search" />
+
 
         <div id="ingredientsList" class="list"></div>
         <div class="hint" id="ingredientsEmptyHint">Noch keine Zutaten.</div>
