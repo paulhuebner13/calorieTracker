@@ -550,14 +550,14 @@ function resetRecipeDraft() {
 }
 resetRecipeDraft();
 
-function openRecipeEditorModal(id) {
+function openRecipeEditorModal(id, keepDraft = false) {
   editingRecipeId = id;
 
   if (id) {
     const r = state.recipes.find(x => x.id === id);
     window.__recipeDraft = { id: r.id, name: r.name, items: r.items.map(x => ({ ...x })) };
   } else {
-    resetRecipeDraft();
+    if (!keepDraft) resetRecipeDraft();
   }
 
   openModal(id ? "Gericht bearbeiten" : "Neues Gericht", (container) => {
@@ -670,9 +670,10 @@ function openRecipeEditorModal(id) {
         return;
       }
       openIngredientPickerForRecipe(() => {
-        // reopen the recipe modal with updated draft
-        openRecipeEditorModal(editingRecipeId);
-      });
+  // reopen the recipe modal with updated draft (do NOT reset draft)
+  openRecipeEditorModal(editingRecipeId, true);
+});
+
     });
 
     form.addEventListener("submit", (e) => {
