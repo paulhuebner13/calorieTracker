@@ -604,26 +604,37 @@ body{
   }
 }
 
+/* ===== MODAL PICKER: große, dominante Überschrift ===== */
 
-/* ===== Modal Pickers: Name deutlich größer ===== */
-.modalRow strong{
-  font-size: calc(30px * var(--ui-scale));
-  font-weight: 980;
-  letter-spacing: -0.4px;
+/* Linke Text-Spalte im Modal NICHT mehr flex-begrenzt */
+.modal .modalRow .row > div:first-child{
   display: block;
 }
 
-.modalRow .item__sub{
-  font-size: calc(19px * var(--ui-scale));
-  font-weight: 750;
+/* TITEL (Zutat / Gericht) */
+.modal .modalRow strong{
+  display: block;
+  font-size: 34px;
+  font-weight: 980;
+  line-height: 1.15;
+  letter-spacing: -0.4px;
+  margin-bottom: 6px;
+}
+
+/* UNTERTEXT (Marke / Details) */
+.modal .modalRow .item__sub{
+  font-size: 20px;
+  font-weight: 700;
   line-height: 1.35;
 }
 
+/* Mobile: NOCH größer */
+@media (pointer: coarse){
+  .modal .modalRow strong{
+    font-size: 38px;
+  }
 
-
-.modalRow strong{
-  font-size: 20px;
-  font-weight: 980;
-  letter-spacing: -0.3px;
-  display: block;
+  .modal .modalRow .item__sub{
+    font-size: 22px;
+  }
 }
