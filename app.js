@@ -292,7 +292,6 @@ btnOpenGoals.addEventListener("click", () => {
       <div class="row">
         <button class="btn" type="submit">Speichern</button>
       </div>
-      <div class="hint">Prozentanzeige am Hauptscreen nur für kcal, Protein und Preis.</div>
     `;
 
     container.appendChild(form);
@@ -727,7 +726,10 @@ const dayProteinPct = $("#dayProteinPct");
 const dayPriceValue = $("#dayPriceValue");
 const dayPricePct = $("#dayPricePct");
 const dayCarbsValue = $("#dayCarbsValue");
+const dayCarbsPct = $("#dayCarbsPct");
 const dayFatValue = $("#dayFatValue");
+const dayFatPct = $("#dayFatPct");
+
 
 btnAddIngredientToDay.addEventListener("click", () => {
   if (state.ingredients.length === 0) {
@@ -1020,7 +1022,10 @@ dayPriceValue.textContent = `${round2(totals.price)}`.replace(".", ",");
   dayPricePct.textContent = `${clampPct(Math.round((totals.price / state.goals.price) * 100))}%`;
 
   dayCarbsValue.textContent = `${round1(totals.carbs).replace(".", ",")}`;
-  dayFatValue.textContent = `${round1(totals.fat).replace(".", ",")}`;
+dayCarbsPct.textContent = `${clampPct(Math.round((totals.carbs / state.goals.carbs) * 100))}%`;
+
+dayFatValue.textContent = `${round1(totals.fat).replace(".", ",")}`;
+dayFatPct.textContent = `${clampPct(Math.round((totals.fat / state.goals.fat) * 100))}%`;
 }
 
 function renderIngredients() {

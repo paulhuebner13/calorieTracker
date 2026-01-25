@@ -121,6 +121,13 @@ body{
 .miniMetric__label{ color: var(--muted); font-size: 13px; font-weight: 800; }
 .miniMetric__value{ font-size: 18px; font-weight: 980; margin-top: 10px; letter-spacing: -0.2px; }
 
+.miniMetric__sub{
+  color: var(--muted);
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .miniData{
   border: 1px solid var(--line);
   border-radius: 16px;
