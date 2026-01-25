@@ -553,11 +553,14 @@ resetRecipeDraft();
 function openRecipeEditorModal(id, keepDraft = false) {
   editingRecipeId = id;
 
-  if (id) {
-    const r = state.recipes.find(x => x.id === id);
-    window.__recipeDraft = { id: r.id, name: r.name, items: r.items.map(x => ({ ...x })) };
-  } else {
-    if (!keepDraft) resetRecipeDraft();
+  // If we come back from the ingredient picker, we MUST keep the current draft.
+  if (!keepDraft) {
+    if (id) {
+      const r = state.recipes.find(x => x.id === id);
+      window.__recipeDraft = { id: r.id, name: r.name, items: r.items.map(x => ({ ...x })) };
+    } else {
+      resetRecipeDraft();
+    }
   }
 
   openModal(id ? "Gericht bearbeiten" : "Neues Gericht", (container) => {
@@ -591,6 +594,10 @@ function openRecipeEditorModal(id, keepDraft = false) {
 
     const nameEl = form.querySelector("#mRecipeName");
     nameEl.value = window.__recipeDraft.name || "";
+
+    nameEl.addEventListener("input", () => {
+  window.__recipeDraft.name = nameEl.value;
+});
 
     const listEl = form.querySelector("#mRecipeIngredients");
     const hintEl = form.querySelector("#mRecipeIngredientsHint");
@@ -665,16 +672,20 @@ function openRecipeEditorModal(id, keepDraft = false) {
 
     const addBtn = form.querySelector("#mAddIngredientToRecipe");
     addBtn.addEventListener("click", () => {
-      if (state.ingredients.length === 0) {
-        alert("Du brauchst zuerst Zutaten.");
-        return;
-      }
-      openIngredientPickerForRecipe(() => {
-  // reopen the recipe modal with updated draft (do NOT reset draft)
-  openRecipeEditorModal(editingRecipeId, true);
+  if (state.ingredients.length === 0) {
+    alert("Du brauchst zuerst Zutaten.");
+    return;
+  }
+
+  // IMPORTANT: keep the currently typed name
+  window.__recipeDraft.name = nameEl.value;
+
+  openIngredientPickerForRecipe(() => {
+    // reopen the recipe modal with updated draft (do NOT reset draft)
+    openRecipeEditorModal(editingRecipeId, true);
+  });
 });
 
-    });
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
