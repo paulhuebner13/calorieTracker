@@ -20,6 +20,10 @@ body{
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+
+
   /* “App feeling” */
   min-height: 100dvh;
   overscroll-behavior: none;
@@ -560,5 +564,16 @@ body{
 
   .hint, .summaryBox{
     font-size: calc(16px * var(--ui-scale));
+  }
+}
+
+
+@media (max-width: 520px){
+  .sideActions{
+    width: 100%;
+    justify-content: stretch;
+  }
+  .sideActions .btn{
+    width: 100%;
   }
 }
