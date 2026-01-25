@@ -1013,14 +1013,14 @@ function renderDay() {
   dayKcalValue.textContent = String(Math.round(totals.kcal));
   dayKcalPct.textContent = `${clampPct(Math.round((totals.kcal / state.goals.kcal) * 100))}%`;
 
-  dayProteinValue.textContent = `${round1(totals.protein).replace(".", ",")} g`;
+  dayProteinValue.textContent = `${round1(totals.protein).replace(".", ",")}`;
   dayProteinPct.textContent = `${clampPct(Math.round((totals.protein / state.goals.protein) * 100))}%`;
 
-  dayPriceValue.textContent = euro(totals.price);
+dayPriceValue.textContent = `${round2(totals.price)}`.replace(".", ",");
   dayPricePct.textContent = `${clampPct(Math.round((totals.price / state.goals.price) * 100))}%`;
 
-  dayCarbsValue.textContent = `${round1(totals.carbs).replace(".", ",")} g`;
-  dayFatValue.textContent = `${round1(totals.fat).replace(".", ",")} g`;
+  dayCarbsValue.textContent = `${round1(totals.carbs).replace(".", ",")}`;
+  dayFatValue.textContent = `${round1(totals.fat).replace(".", ",")}`;
 }
 
 function renderIngredients() {
