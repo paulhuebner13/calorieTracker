@@ -458,6 +458,17 @@ body{
     margin: 0;
   }
 
+    .modalRow strong{
+    font-size: calc(26px * var(--ui-scale));
+    font-weight: 980;
+  }
+
+  .modalRow .item__sub{
+    font-size: calc(16px * var(--ui-scale));
+    font-weight: 700;
+  }
+
+
   /* Cards spacing */
   .card{
     padding: calc(16px * var(--ui-scale));
@@ -498,6 +509,13 @@ body{
   .miniMetric__value{
     font-size: calc(28px * var(--ui-scale));
   }
+
+    .miniMetric__sub{
+    font-size: calc(18px * var(--ui-scale));
+    font-weight: 800;
+    margin-top: calc(10px * var(--ui-scale));
+  }
+
 
   /* Data box */
   .miniData .miniMetric__label{
@@ -598,4 +616,12 @@ body{
 .modalRow .item__sub{
   font-size: 14px;
   font-weight: 700;
+}
+
+
+.modalRow strong{
+  font-size: 20px;
+  font-weight: 980;
+  letter-spacing: -0.3px;
+  display: block;
 }
