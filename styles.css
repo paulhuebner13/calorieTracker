@@ -585,3 +585,17 @@ body{
     width: 100%;
   }
 }
+
+
+/* ===== Modal Pickers: Name deutlich größer ===== */
+.modalRow strong{
+  font-size: 20px;
+  font-weight: 980;
+  letter-spacing: -0.3px;
+  display: block;
+}
+
+.modalRow .item__sub{
+  font-size: 14px;
+  font-weight: 700;
+}
