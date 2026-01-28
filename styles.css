@@ -1,16 +1,87 @@
-:root{
-  --bg: #0e0f12;
-  --card: #171922;
-  --text: #f2f4f8;
-  --muted: #aab0c0;
-  --line: rgba(255,255,255,0.10);
-  --accent: #89c7ff;
-  --danger: #ff6b6b;
+/* =========================================================
+   Calorie Tracker CSS
+   Ziel: Deinen bestehenden Lightmode LOOK behalten (glass, clean),
+   aber Darkmode in den gleichen Stil bringen.
+   Fixes: Ziele Button sichtbar, Schließen/Löschen sichtbar, überall konsistent
+   ========================================================= */
 
+/* -------------------------
+   TOKENS
+   ------------------------- */
+:root{
+  /* LIGHT bleibt "super" */
+  --bg: #f5f7fb;
+  --text: #0b1320;
+  --muted: rgba(11,19,32,0.62);
+  --line: rgba(11,19,32,0.10);
+
+  /* Glass surfaces */
+  --card: rgba(255,255,255,0.72);
+  --card-strong: rgba(255,255,255,0.82);
+  --card-tint: rgba(79,143,230,0.06);
+
+  /* Accent */
+  --accent: #4f8fe6;
+  --accent-weak: rgba(79,143,230,0.18);
+
+  /* Danger */
+  --danger: #d84c4c;
+  --danger-weak: rgba(216,76,76,0.28);
+
+  /* Shadows */
+  --shadow: 0 10px 26px rgba(11,19,32,0.10);
+  --shadow-soft: 0 8px 20px rgba(11,19,32,0.08);
+
+  /* Hero gradient */
+  --hero-a: rgba(79,143,230,0.16);
+  --hero-b: rgba(79,143,230,0.08);
+  --hero-border: rgba(79,143,230,0.22);
+
+  /* Ratio colors (used by JS version that reads CSS vars) */
+  --ratio-base: var(--text);
+  --ratio-green: rgb(22,145,86);
+  --ratio-red: rgb(200,55,55);
+
+  /* UI scaling */
   --ui-scale: 1;
   --ui-scale-phone: 1.6;
+  --meal-font: 18px;
+  --meal-value-font: 30px;
 }
 
+/* DARK mode: gleiche Glass Optik, nur dunkle Palette */
+html:not(.theme--light){
+  --bg: #0b0d12;
+  --text: #f2f4f8;
+  --muted: rgba(242,244,248,0.62);
+  --line: rgba(255,255,255,0.10);
+
+  --card: rgba(255,255,255,0.05);
+  --card-strong: rgba(255,255,255,0.07);
+  --card-tint: rgba(137,199,255,0.06);
+
+  --accent: #89c7ff;
+  --accent-weak: rgba(137,199,255,0.22);
+
+  --danger: #ff6b6b;
+  --danger-weak: rgba(255,107,107,0.28);
+
+  --shadow: 0 14px 34px rgba(0,0,0,0.50);
+  --shadow-soft: 0 10px 26px rgba(0,0,0,0.42);
+
+  --hero-a: rgba(137,199,255,0.20);
+  --hero-b: rgba(137,199,255,0.10);
+  --hero-border: rgba(137,199,255,0.26);
+
+  /* Ratio colors */
+  --ratio-green: rgb(60,185,120);
+  --ratio-red: rgb(255,90,90);
+}
+
+
+/* -------------------------
+   RESET / BASE
+   ------------------------- */
 *{ box-sizing: border-box; }
 html, body{ height: 100%; }
 
@@ -26,7 +97,6 @@ body{
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Leave room for date bar + tabs */
 .content{
   min-height: 100dvh;
   padding: max(14px, env(safe-area-inset-top)) 14px calc(180px + env(safe-area-inset-bottom)) 14px;
@@ -36,23 +106,32 @@ body{
 }
 
 @media (pointer: coarse){
-  .content{
-    padding-bottom: calc(260px + env(safe-area-inset-bottom));
-  }
+  .content{ padding-bottom: calc(260px + env(safe-area-inset-bottom)); }
 }
 
-
+/* -------------------------
+   CARDS
+   ------------------------- */
 .card{
-  background: var(--card);
+  background: linear-gradient(180deg, var(--card), var(--card-tint));
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 14px;
   margin: 12px 0;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.card--hero{ padding: 16px; }
+.card--hero{
+  padding: 16px;
+  background: linear-gradient(135deg, var(--hero-a), var(--hero-b));
+  border: 1px solid var(--hero-border);
+  box-shadow: var(--shadow);
+}
 
-.h2{ font-weight: 950; font-size: 18px; letter-spacing: -0.2px; }
+/* Typography */
+.h2{ font-weight: 950; font-size: 18px; letter-spacing: -0.2px; color: var(--text); }
 .h3{ font-weight: 900; font-size: 15px; color: var(--muted); }
 
 .row{ display: flex; gap: 10px; align-items: center; }
@@ -61,6 +140,13 @@ body{
 .row--stackMobile{ align-items: flex-start; }
 .wrap{ flex-wrap: wrap; }
 
+.hint{ color: var(--muted); font-size: 14px; margin-top: 10px; font-weight: 700; }
+.divider{ height: 1px; background: var(--line); margin: 14px 0; }
+.hidden{ display: none !important; }
+
+/* -------------------------
+   METRICS
+   ------------------------- */
 .metrics3{
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -73,28 +159,14 @@ body{
   border-radius: 16px;
   padding: 14px 14px 12px 14px;
   min-height: 110px;
+  background: var(--card-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.metric__label{
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.metric__value{
-  font-size: 34px;
-  font-weight: 980;
-  margin-top: 10px;
-  letter-spacing: -0.6px;
-  line-height: 1;
-}
-
-.metric__sub{
-  color: var(--muted);
-  margin-top: 8px;
-  font-size: 14px;
-  font-weight: 800;
-}
+.metric__label{ color: var(--muted); font-size: 14px; font-weight: 800; }
+.metric__value{ font-size: 34px; font-weight: 980; margin-top: 10px; letter-spacing: -0.6px; line-height: 1; }
+.metric__sub{ color: var(--muted); margin-top: 8px; font-size: 14px; font-weight: 800; }
 
 .miniRow{
   display: grid;
@@ -103,12 +175,14 @@ body{
   margin-top: 12px;
 }
 
-
 .miniMetric{
   border: 1px solid var(--line);
   border-radius: 16px;
   padding: 12px 12px;
   min-height: 78px;
+  background: var(--card-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .miniMetric__label{ color: var(--muted); font-size: 13px; font-weight: 800; }
@@ -122,67 +196,165 @@ body{
   display: grid;
   gap: 10px;
   min-height: 78px;
+  background: var(--card-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 .miniData__buttons{ display: flex; gap: 10px; flex-wrap: wrap; }
 
-/* Buttons */
+/* -------------------------
+   BUTTONS
+   Fix: Ziele, Schließen, Löschen müssen IMMER sichtbar sein
+   ------------------------- */
 .btn{
   background: var(--accent);
-  border: none;
-  color: #041526;
+  border: 1px solid rgba(0,0,0,0);
+  color: #ffffff; /* wichtig: in light UND dark gut lesbar */
   font-weight: 980;
   padding: 14px 14px;
   border-radius: 16px;
   cursor: pointer;
   min-height: 52px;
   font-size: 16px;
+  box-shadow: 0 8px 18px rgba(79,143,230,0.18);
+  transition: transform 0.06s ease, filter 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+html:not(.theme--light) .btn{
+  box-shadow: 0 10px 22px rgba(0,0,0,0.35);
 }
 
+.btn:hover{ filter: brightness(1.03); }
+.btn:active{ transform: scale(0.99); }
+
+/* Ghost MUST be readable (this fixes Ziele + Schließen when they are ghost) */
 .btn--ghost{
-  background: transparent;
+  background: rgba(255,255,255,0.55);
   border: 1px solid var(--line);
   color: var(--text);
-  font-weight: 950;
+  box-shadow: var(--shadow-soft);
+}
+html:not(.theme--light) .btn--ghost{
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.35);
 }
 
 .btn--danger{
-  background: transparent;
-  border: 1px solid rgba(255,107,107,0.40);
+  background: rgba(255,255,255,0.35);
+  border: 1px solid var(--danger-weak);
   color: var(--danger);
   font-weight: 980;
+  box-shadow: none;
+}
+html:not(.theme--light) .btn--danger{
+  background: rgba(255,255,255,0.06);
 }
 
-.btn--tiny{
-  padding: 10px 12px;
-  border-radius: 14px;
-  min-height: 42px;
-  font-size: 14px;
+.btn--tiny{ padding: 10px 12px; border-radius: 14px; min-height: 42px; font-size: 14px; }
+.btn--big{ min-height: 54px; padding: 14px 16px; }
+
+/* Goals button area */
+.dayGoalAction{ margin-top: 18px; }
+.dayGoalAction .btn{
+  width: 100%;
 }
 
-.btn--big{
+/* Theme toggle */
+
+/* Language toggle */
+.langToggle{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.langBtn{
   min-height: 54px;
-  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.50);
+  color: var(--text);
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+html:not(.theme--light) .langBtn{
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.35);
 }
 
-/* Forms */
+.langBtn--active{
+  border-color: rgba(79,143,230,0.55);
+  box-shadow: 0 0 0 1px rgba(79,143,230,0.18) inset, var(--shadow-soft);
+}
+html:not(.theme--light) .langBtn--active{
+  border-color: rgba(137,199,255,0.55);
+  box-shadow: 0 0 0 1px rgba(137,199,255,0.18) inset, 0 10px 22px rgba(0,0,0,0.35);
+}
+
+
+.themeToggle{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.themeBtn{
+  min-height: 54px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.50);
+  color: var(--text);
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+html:not(.theme--light) .themeBtn{
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.35);
+}
+
+.themeBtn--active{
+  border-color: rgba(79,143,230,0.55);
+  box-shadow: 0 0 0 1px rgba(79,143,230,0.18) inset, var(--shadow-soft);
+}
+html:not(.theme--light) .themeBtn--active{
+  border-color: rgba(137,199,255,0.55);
+  box-shadow: 0 0 0 1px rgba(137,199,255,0.18) inset, 0 10px 22px rgba(0,0,0,0.35);
+}
+
+/* -------------------------
+   FORMS
+   ------------------------- */
 .field{ display: grid; gap: 8px; margin: 12px 0; }
 .field span{ color: var(--muted); font-size: 14px; font-weight: 800; }
 
 .field input,
 .searchInput{
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(11,19,32,0.14);
   color: var(--text);
   border-radius: 16px;
   padding: 14px 14px;
   outline: none;
   min-height: 54px;
   font-size: 16px;
+  box-shadow: 0 8px 18px rgba(11,19,32,0.06);
+}
+
+html:not(.theme--light) .field input,
+html:not(.theme--light) .searchInput{
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--line);
+  box-shadow: none;
 }
 
 .field select{
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.72);
+  border: 1px solid rgba(11,19,32,0.14);
   color: var(--text);
   border-radius: 16px;
   padding: 14px 44px 14px 14px;
@@ -201,13 +373,27 @@ body{
   background-size: 8px 8px, 8px 8px;
   background-repeat: no-repeat;
 }
+html:not(.theme--light) .field select{
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--line);
+}
 
 .field input:focus, .field select:focus, .searchInput:focus{
-  border-color: rgba(137,199,255,0.55);
+  border-color: rgba(79,143,230,0.45);
+  box-shadow: 0 0 0 4px var(--accent-weak);
+}
+html:not(.theme--light) .field input:focus,
+html:not(.theme--light) .field select:focus,
+html:not(.theme--light) .searchInput:focus{
+  border-color: rgba(137,199,255,0.45);
+  box-shadow: 0 0 0 4px rgba(137,199,255,0.16);
 }
 
 .grid2{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
+/* -------------------------
+   LISTS / ITEMS
+   ------------------------- */
 .list{ display: grid; gap: 10px; margin-top: 12px; }
 
 .item{
@@ -217,7 +403,19 @@ body{
   display: grid;
   gap: 8px;
   cursor: pointer;
+  background: linear-gradient(180deg, var(--card), var(--card-tint));
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: border-color 0.15s ease, transform 0.06s ease;
 }
+.item:hover{
+  border-color: rgba(79,143,230,0.28);
+}
+html:not(.theme--light) .item:hover{
+  border-color: rgba(137,199,255,0.28);
+}
+.item:active{ transform: scale(0.995); }
 
 .item__top{
   display: flex;
@@ -226,7 +424,12 @@ body{
   align-items: baseline;
 }
 
-.item__title{ font-weight: 980; font-size: 16px; }
+.item__title{
+  font-weight: 900;
+  font-size: 22px;
+  line-height: 1.25;
+  color: var(--text);
+}
 
 .item__sub{
   color: var(--muted);
@@ -242,10 +445,6 @@ body{
   font-weight: 800;
 }
 
-.hint{ color: var(--muted); font-size: 14px; margin-top: 10px; font-weight: 700; }
-
-.divider{ height: 1px; background: var(--line); margin: 14px 0; }
-
 .summaryBox{
   color: var(--muted);
   font-size: 14px;
@@ -254,9 +453,9 @@ body{
   font-weight: 700;
 }
 
-.hidden{ display: none !important; }
-
-/* ===== Meals overview blocks ===== */
+/* -------------------------
+   MEALS
+   ------------------------- */
 .mealBlocks{
   display: grid;
   gap: 12px;
@@ -270,7 +469,17 @@ body{
   cursor: pointer;
   display: grid;
   gap: 10px;
+  background: linear-gradient(180deg, var(--card), var(--card-tint));
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-size: var(--meal-font);
+  touch-action: pan-y;
+  transition: border-color 0.15s ease, transform 0.06s ease;
 }
+.mealBlock:hover{ border-color: rgba(79,143,230,0.28); }
+html:not(.theme--light) .mealBlock:hover{ border-color: rgba(137,199,255,0.28); }
+.mealBlock:active{ transform: scale(0.995); }
 
 .mealTop{
   display: flex;
@@ -281,15 +490,16 @@ body{
 
 .mealTitle{
   font-weight: 980;
-  font-size: 20px;
-  letter-spacing: -0.2px;
+  font-size: 22px;
+  letter-spacing: -0.3px;
+  color: var(--text);
 }
-
 .mealPrice{
   font-weight: 980;
   font-size: 22px;
   letter-spacing: -0.2px;
   white-space: nowrap;
+  color: var(--text);
 }
 
 .mealGrid{
@@ -298,51 +508,49 @@ body{
   gap: 10px;
 }
 
-
 .mealLine{
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 10px 12px;
   display: grid;
   gap: 6px;
+  background: rgba(255,255,255,0.30);
+}
+html:not(.theme--light) .mealLine{
+  background: rgba(255,255,255,0.05);
 }
 
 .mealLineLabel{
   color: var(--muted);
-  font-weight: 800;
-  font-size: 13px;
+  font-weight: 700;
+  font-size: inherit;
 }
 
 .mealLineValue{
-  font-weight: 980;
-  font-size: 18px;
+  font-size: var(--meal-value-font);
+  font-weight: 900;
+  line-height: 1.05;
+  color: var(--text);
 }
 
 .mealLinePct{
   color: var(--muted);
   font-weight: 800;
-  font-size: 14px;
+  font-size: inherit;
 }
 
 .mealRatios{
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--line);
   border-radius: 14px;
   padding: 10px 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 14px;
+  background: rgba(255,255,255,0.30);
 }
-
-.mealBlock{
-  font-size: calc(18px * var(--ui-scale));
+html:not(.theme--light) .mealRatios{
+  background: rgba(255,255,255,0.05);
 }
-
-.mealLineValue,
-.mealLinePct,
-.mealRatioValue{
-  font-size: calc(18px * var(--ui-scale));
-}
-
 
 .mealRatioRow{
   display: flex;
@@ -353,36 +561,46 @@ body{
 
 .mealRatioLabel{
   color: var(--muted);
-  font-weight: 600;
-  font-size: 16px;
+  font-weight: 650;
+  font-size: inherit;
 }
 
+/* Ratio Value: NICHT überschreiben, weil du inline style aus JS setzt */
 .mealRatioValue{
-  font-size: 18px;
-  font-weight: 500; /* NICHT fett */
+  font-size: inherit;
+  font-weight: 700;
   letter-spacing: 0;
 }
 
-
-/* ===== Modal ===== */
+/* -------------------------
+   MODAL
+   Fix: Schließen sichtbar
+   ------------------------- */
 .modal{
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.58);
+  background: rgba(11,19,32,0.35);
   display: grid;
   place-items: end center;
   z-index: 50;
+}
+html:not(.theme--light) .modal{
+  background: rgba(0,0,0,0.58);
 }
 
 .modal__sheet{
   width: 100%;
   max-width: 980px;
-  background: var(--card);
+  background: linear-gradient(180deg, var(--card), var(--card-tint));
   border: 1px solid var(--line);
   border-radius: 22px 22px 0 0;
   padding: 14px;
   max-height: 86vh;
   overflow: auto;
+  color: var(--text);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .modal__content{
@@ -398,9 +616,23 @@ body{
   border-radius: 16px;
   padding: 12px;
   cursor: default;
+  background: rgba(255,255,255,0.30);
+}
+html:not(.theme--light) .modalRow{
+  background: rgba(255,255,255,0.05);
 }
 
-/* ===== bottom area with date bar + tabs ===== */
+.modalRow strong{
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+  color: var(--text);
+}
+
+/* -------------------------
+   BOTTOM BAR + TABS
+   ------------------------- */
 .bottomArea{
   position: fixed;
   left: 0;
@@ -410,7 +642,7 @@ body{
 }
 
 .dateBar{
-  background: rgba(14,15,18,0.96);
+  background: rgba(245,247,251,0.82);
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   padding: 8px 12px;
@@ -418,23 +650,28 @@ body{
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
   gap: 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+html:not(.theme--light) .dateBar{
+  background: rgba(11,13,18,0.78);
 }
 
 .dateNavBtn{
   height: 40px;
   border-radius: 14px;
   border: 1px solid var(--line);
-  background: transparent;
+  background: rgba(255,255,255,0.40);
   color: var(--text);
   cursor: pointer;
   font-weight: 980;
   font-size: 18px;
 }
-
-.dateNavBtn:disabled{
-  opacity: 0.35;
-  cursor: default;
+html:not(.theme--light) .dateNavBtn{
+  background: rgba(255,255,255,0.06);
 }
+
+.dateNavBtn:disabled{ opacity: 0.35; cursor: default; }
 
 .dateLabel{
   text-align: center;
@@ -444,37 +681,52 @@ body{
 }
 
 .tabs{
-  background: rgba(14,15,18,0.96);
+  background: rgba(245,247,251,0.82);
   border-top: 1px solid var(--line);
   padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) 12px;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+html:not(.theme--light) .tabs{
+  background: rgba(11,13,18,0.78);
 }
 
 .tabBtn{
-  background: transparent;
+  background: rgba(255,255,255,0.55);
   border: 1px solid var(--line);
-  color: var(--muted);
+  color: rgba(11,19,32,0.58);
   border-radius: 18px;
   padding: 14px 10px;
   cursor: pointer;
   font-weight: 980;
   min-height: 56px;
   font-size: 16px;
+  box-shadow: var(--shadow-soft);
+}
+html:not(.theme--light) .tabBtn{
+  background: rgba(255,255,255,0.06);
+  color: rgba(242,244,248,0.62);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.35);
 }
 
 .tabBtn--active{
   color: var(--text);
-  border-color: rgba(137,199,255,0.60);
+  border-color: rgba(79,143,230,0.45);
+  box-shadow: 0 0 0 1px rgba(79,143,230,0.16) inset, var(--shadow-soft);
+}
+html:not(.theme--light) .tabBtn--active{
+  border-color: rgba(137,199,255,0.45);
+  box-shadow: 0 0 0 1px rgba(137,199,255,0.16) inset, 0 10px 22px rgba(0,0,0,0.35);
 }
 
-/* ===== Mobile layout ===== */
+/* -------------------------
+   RESPONSIVE
+   ------------------------- */
 @media (max-width: 520px){
-  .content{
-    padding-left: 12px;
-    padding-right: 12px;
-  }
+  .content{ padding-left: 12px; padding-right: 12px; }
 
   .row--stackMobile{
     flex-direction: column;
@@ -482,41 +734,26 @@ body{
     gap: 12px;
   }
 
-  .metrics3{
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
+  .metrics3{ grid-template-columns: 1fr; gap: 12px; }
 
   .metric{
     min-height: 132px;
     padding: 18px;
   }
 
-  .metric__value{
-    font-size: clamp(44px, 12vw, 70px);
-  }
+  .metric__value{ font-size: clamp(44px, 12vw, 70px); }
 
-  .miniRow{
-    grid-template-columns: 1fr;
-  }
-
-  .miniMetric, .miniData{
-    min-height: 84px;
-    padding: 14px;
-    border-radius: 18px;
-  }
+  .miniRow{ grid-template-columns: 1fr; }
+  .miniMetric, .miniData{ min-height: 84px; padding: 14px; border-radius: 18px; }
 
   .grid2{ grid-template-columns: 1fr; }
-
   .btn{ width: 100%; }
 
-  .tabs{
-    padding-left: 10px;
-    padding-right: 10px;
-  }
+  .tabs{ padding-left: 10px; padding-right: 10px; }
+
+  .mealGrid{ grid-template-columns: 1fr 1fr; }
 }
 
-/* ===== PHONE scaling ===== */
 @media (pointer: coarse) {
   :root{ --ui-scale: var(--ui-scale-phone); }
 
@@ -564,7 +801,8 @@ body{
     border-radius: calc(18px * var(--ui-scale));
     gap: calc(10px * var(--ui-scale));
   }
-  .item__title{ font-size: calc(18px * var(--ui-scale)); }
+
+  .item__title{ font-size: calc(22px * var(--ui-scale)); }
   .item__sub, .item__right{ font-size: calc(16px * var(--ui-scale)); }
 
   .field span{ font-size: calc(16px * var(--ui-scale)); }
@@ -575,19 +813,13 @@ body{
     border-radius: calc(18px * var(--ui-scale));
   }
 
-  .dateBar{
-    padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale));
-  }
-
+  .dateBar{ padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale)); }
   .dateNavBtn{
     height: calc(44px * var(--ui-scale));
     border-radius: calc(16px * var(--ui-scale));
     font-size: calc(20px * var(--ui-scale));
   }
-
-  .dateLabel{
-    font-size: calc(18px * var(--ui-scale));
-  }
+  .dateLabel{ font-size: calc(18px * var(--ui-scale)); }
 
   .tabs{
     gap: calc(12px * var(--ui-scale));
@@ -603,300 +835,9 @@ body{
     border-radius: calc(22px * var(--ui-scale));
   }
 
-  .mealTitle{ font-size: calc(22px * var(--ui-scale)); }
-  .mealPrice{ font-size: calc(24px * var(--ui-scale)); }
-  .mealLineValue{ font-size: calc(20px * var(--ui-scale)); }
-  .mealRatioValue{ font-size: calc(20px * var(--ui-scale)); }
-}
-
-/* ===== Meal block typography unification ===== */
-
-.mealBlock{
-  font-size: 18px; /* Basisgröße für ALLES im Block */
-}
-
-/* Titel & Preis bleiben prominent */
-.mealTitle{
-  font-size: 20px;
-  font-weight: 980;
-}
-
-.mealPrice{
-  font-size: 22px;
-  font-weight: 980;
-}
-
-/* Makro-Labels kleiner & gedimmt */
-.mealLineLabel{
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--muted);
-}
-
-/* Werte: NICHT fett, gleich groß */
-.mealLineValue{
-  font-size: 18px;
-  font-weight: 500;
-}
-
-/* Prozent: gleiche Größe, gedimmt */
-.mealLinePct{
-  font-size: 18px;
-  font-weight: 500;
-  color: rgba(242,244,248,0.65);
-}
-
-/* ===== FORCE same font size everywhere inside meal blocks (desktop + mobile) ===== */
-
-:root{
-  --meal-font: 18px; /* hier steuerst du ALLES */
-}
-
-.mealBlock{
-  font-size: var(--meal-font);
-}
-
-/* ALLES im Block erbt die gleiche Größe */
-.mealBlock .mealLineLabel,
-.mealBlock .mealLinePct,
-.mealBlock .mealRatioLabel,
-.mealBlock .mealRatioValue{
-  font-size: inherit !important;
-  line-height: 1.15;
-}
-
-/* WERTE dürfen größer sein */
-.mealBlock .mealLineValue{
-  font-size: var(--meal-value-font) !important;
-  line-height: 1.05;
-}
-
-
-/* nur Gewicht/Farbe unterscheiden (aber NICHT die Größe) */
-.mealBlock .mealLineLabel,
-.mealBlock .mealRatioLabel{
-  font-weight: 600;
-  color: rgba(242,244,248,0.65);
-}
-
-.mealBlock .mealLineValue,
-.mealBlock .mealLinePct,
-.mealBlock .mealRatioValue{
-  font-weight: 500;
-  color: var(--text);
-}
-
-/* Prozent leicht gedimmt */
-.mealBlock .mealLinePct{
-  color: rgba(242,244,248,0.60);
-}
-
-/* ===== meal block border: whiter & more prominent ===== */
-.mealBlock{
-  border-width: 2px;
-  border-color: rgba(255,255,255,0.28);
-  background: rgba(137,199,255,0.10);
-}
-
-/* ===== Bigger titles for ingredient / recipe names (lists & modals) ===== */
-
-.item__title{
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-@media (pointer: coarse){
-  .item__title{
-    font-size: calc(20px * var(--ui-scale));
-  }
-}
-
-/* smoother scroll on tappable meal blocks */
-.mealBlock{
-  touch-action: pan-y;
-}
-
-/* ===== FINAL OVERRIDE: Meal headings bigger everywhere ===== */
-
-.mealTitle{
-  font-size: 22px !important;
-  font-weight: 980;
-  letter-spacing: -0.3px;
-}
-
-@media (pointer: coarse){
-  .mealTitle{
-    font-size: calc(24px * var(--ui-scale)) !important;
-  }
-}
-
-/* ===== FINAL OVERRIDE: Ingredient & Recipe titles big ===== */
-
-.item__title{
-  font-size: 22px !important;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
-@media (pointer: coarse){
-  .item__title{
-    font-size: calc(22px * var(--ui-scale)) !important;
-  }
-}
-
-
-/* ===== FINAL OVERRIDE: Make picker titles (Zutat/Gericht hinzufügen) big ===== */
-
-/* Modal generell etwas größere Basisschrift, damit nix "mini" wirkt */
-.modal__sheet{
-  font-size: 18px;
-}
-
-@media (pointer: coarse){
-  .modal__sheet{
-    font-size: calc(18px * var(--ui-scale)) !important;
-  }
-}
-
-/* Der eigentliche Titel im Picker ist <strong>...</strong> */
-.modalRow strong{
-  font-size: 22px !important;
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: -0.2px;
-}
-
-@media (pointer: coarse){
-  .modalRow strong{
-    font-size: calc(22px * var(--ui-scale)) !important;
-  }
-}
-
-/* Optional: der “Untertext” im Picker (Marke usw.) soll nicht winzig sein */
-.modalRow .item__sub{
-  font-size: 16px !important;
-}
-
-@media (pointer: coarse){
-  .modalRow .item__sub{
-    font-size: calc(16px * var(--ui-scale)) !important;
-  }
-}
-
-
-:root{
-  --meal-value-font: 30px;  /* HIER drehst du die Zahlengröße */
-}
-
-/* NUR die Werte (Zahlen) größer */
-.mealLineValue{
-  font-size: var(--meal-value-font) !important;
-  font-weight: 800 !important; /* optional, macht es lesbarer */
-  line-height: 1.05;
-}
-
-/* Mobil mit deinem Scaling mitziehen lassen */
-@media (pointer: coarse){
   .mealLineValue{
-    font-size: calc(var(--meal-value-font) * var(--ui-scale)) !important;
+    font-size: calc(var(--meal-value-font) * var(--ui-scale));
   }
 }
-/* ===== Day overview (Tagesübersicht) babyblau + passender Rahmen ===== */
-.card--hero{
-  background: #76b0ee; /* softes babyblau */
-  
-  border: 2px solid rgba(80,140,210,0.45); /* blauer Rahmen, nicht grau */
-  border-radius: 20px;
-
-  color: #07131f;
-}
-
-.card--hero *{
-  color: #07131f !important;
-}
-
-.card--hero .metric__label,
-.card--hero .metric__sub,
-.card--hero .miniMetric__label,
-.card--hero .miniMetric__sub{
-  color: rgba(7,19,31,0.72) !important;
-}
-
-.card--hero{
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.25) inset,
-    0 10px 30px rgba(20,60,120,0.18);
-}
 
 
-
-
-/* ===== HERO (Tagesübersicht) ===== */
-.card--hero{
-  background: #84b3e6; /* babyblau innen */
-  border: 2px solid #2f558f; /* DUNKLERES klares Blau */
-  border-radius: 20px;
-
-  color: #07131f;
-
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.25) inset,
-    0 10px 30px rgba(20,60,120,0.22);
-}
-
-
-/* Text im Hero dunkel, Labels leicht gedimmt */
-.card--hero *{
-  color: #07131f !important;
-}
-.card--hero .metric__label,
-.card--hero .metric__sub,
-.card--hero .miniMetric__label,
-.card--hero .miniMetric__sub,
-.card--hero .miniMetric__label,
-.card--hero .miniMetric__sub{
-  color: rgba(7,19,31,0.70) !important;
-}
-
-/* Innere Boxen (6 Kästchen) */
-.card--hero .metric,
-.card--hero .miniMetric,
-.card--hero .miniData{
-  background: rgba(255,255,255,0.52);
-  border: 1.5px solid rgba(129,166,209,0.50);
-}
-
-/* Buttons im Hero: hell wie die Boxen, nicht "dark theme" */
-.card--hero .btn{
-  background: rgba(255,255,255,0.52);
-  border: 1.5px solid rgba(129,166,209,0.55);
-  color: #07131f !important;
-}
-
-/* Innere Boxen: gleiche Blau-Familie */
-.card--hero .metric,
-.card--hero .miniMetric,
-.card--hero .miniData{
-  border-color: rgba(79,119,166,0.45);
-}
-
-/* Buttons im Hero (Export / Import) */
-.card--hero .btn,
-.card--hero .btn--ghost{
-  border-color: rgba(79,119,166,0.45);
-}
-
-
-/* ===== Ziele Button: nur Rahmen, extrem dezent ===== */
-.dayGoalAction{
-  margin-top: 18px;   /* Abstand zum Abendessen */
-}
-
-.dayGoalAction .btn{
-  width: 100%;
-  background: transparent !important;
-  border: 1.5px solid rgba(79,119,166,0.55); /* gleiches Blau wie Hero-Border */
-  color: rgba(242,244,248,0.78);
-  font-weight: 800;
-}

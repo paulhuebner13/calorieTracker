@@ -1,5 +1,8 @@
 "use strict";
 
+console.log("app.js loaded");
+
+
 const LS_KEY = "kcal_tracker_v3";
 
 /*
@@ -15,11 +18,12 @@ const LS_KEY = "kcal_tracker_v3";
 */
 
 const MEALS = [
-  { key: "breakfast", label: "Frühstück" },
-  { key: "lunch", label: "Mittagessen" },
-  { key: "snacks", label: "Snacks" },
-  { key: "dinner", label: "Abendessen" }
+  { key: "breakfast", labelKey: "breakfast" },
+  { key: "lunch", labelKey: "lunch" },
+  { key: "snacks", labelKey: "snacks" },
+  { key: "dinner", labelKey: "dinner" }
 ];
+
 
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
@@ -86,11 +90,19 @@ function ratiosText(price, kcal, protein) {
   const p100prot = (protein > 0) ? (price / protein) * 100 : NaN;
   const p100kcal = (kcal > 0) ? (price / kcal) * 100 : NaN;
 
-  const a = Number.isFinite(p100prot) ? euro(p100prot) : "n/a";
-  const b = Number.isFinite(p100kcal) ? euro(p100kcal) : "n/a";
+  // Reference values from DAILY GOALS (computed "average" target)
+  const refP100prot = (state?.goals?.protein > 0) ? (state.goals.price / state.goals.protein) * 100 : NaN;
+  const refP100kcal = (state?.goals?.kcal > 0) ? (state.goals.price / state.goals.kcal) * 100 : NaN;
 
-  return `· € / 100 g Protein ${a} · € / 100 kcal ${b}`;
+  const a = Number.isFinite(p100prot) ? euroPlain(p100prot) : "n/a";
+  const b = Number.isFinite(p100kcal) ? euroPlain(p100kcal) : "n/a";
+
+  const aRef = Number.isFinite(refP100prot) ? ` (Ø ${euroPlain(refP100prot)})` : "";
+  const bRef = Number.isFinite(refP100kcal) ? ` (Ø ${euroPlain(refP100kcal)})` : "";
+
+  return `· € / 100 g Protein ${a}${aRef} · € / 100 kcal ${b}${bRef}`;
 }
+
 
 function lineFull(price, kcal, protein, carbs, fat) {
   return `Preis ${euro(price)} · kcal ${Math.round(kcal)} · Protein ${round1(protein).replace(".", ",")} g · KH ${round1(carbs).replace(".", ",")} g · Fett ${round1(fat).replace(".", ",")} g ${ratiosText(price, kcal, protein)}`;
@@ -221,52 +233,74 @@ function calcRecipeTotals(recipe) {
   return t;
 }
 
-/* ===== Ratio coloring vs FIXED daily reference ===== */
+
 function ratioColor(value, reference) {
-  // value and reference are both "€ / 100 ..." values.
-  // White if value == reference (within tolerance).
-  // Green if cheaper than reference, red if more expensive.
-  // Max green at 0.5x, max red at 2x.
+  // IMPORTANT: read from :root so theme vars are always found
+  const styles = getComputedStyle(document.documentElement);
+
+  const base = styles.getPropertyValue("--ratio-base").trim() || "rgb(242,244,248)";
+  const green = styles.getPropertyValue("--ratio-green").trim() || "rgb(60,185,120)";
+  const red = styles.getPropertyValue("--ratio-red").trim() || "rgb(255,90,90)";
 
   if (!Number.isFinite(value) || !Number.isFinite(reference) || reference <= 0) {
-    return "rgba(242,244,248,0.90)";
+    return base;
   }
 
-  const ratio = value / reference; // 1.0 => perfect
-  const EPS = 0.03; // 3% tolerance for "white"
-  if (Math.abs(ratio - 1) <= EPS) {
-    return "rgb(242,244,248)";
+  const ratio = value / reference;
+  const EPS = 0.03;
+  if (Math.abs(ratio - 1) <= EPS) return base;
+
+  function colorToObj(c) {
+  const s = String(c).trim();
+
+  // rgb(...) oder rgba(...)
+  const m = s.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (m) return { r: Number(m[1]), g: Number(m[2]), b: Number(m[3]) };
+
+  // hex #rrggbb oder #rgb
+  if (s.startsWith("#")) {
+    let hex = s.slice(1);
+    if (hex.length === 3) hex = hex.split("").map(ch => ch + ch).join("");
+    if (hex.length === 6) {
+      const n = parseInt(hex, 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
   }
 
-  const base = { r: 242, g: 244, b: 248 };
-  const green = { r: 70, g: 200, b: 120 };
-  const red = { r: 255, g: 107, b: 107 };
+  // fallback
+  return { r: 11, g: 19, b: 32 };
+}
+
+
+  const baseObj = colorToObj(base);
+const greenObj = colorToObj(green);
+const redObj = colorToObj(red);
+
 
   let t = 0;
-  let target = base;
+  let target = baseObj;
 
   if (ratio < 1) {
-    // ratio 0.5 -> max green, ratio 1 -> white
-    t = (ratio - 0.5) / (1.0 - 0.5); // 0..1
+    t = (ratio - 0.5) / 0.5;
     t = Math.max(0, Math.min(1, t));
     target = {
-      r: Math.round(green.r + (base.r - green.r) * t),
-      g: Math.round(green.g + (base.g - green.g) * t),
-      b: Math.round(green.b + (base.b - green.b) * t)
+      r: Math.round(greenObj.r + (baseObj.r - greenObj.r) * t),
+      g: Math.round(greenObj.g + (baseObj.g - greenObj.g) * t),
+      b: Math.round(greenObj.b + (baseObj.b - greenObj.b) * t)
     };
   } else {
-    // ratio 1 -> white, ratio 2 -> max red
-    t = (ratio - 1.0) / (2.0 - 1.0); // 0..1
+    t = (ratio - 1.0) / 1.0;
     t = Math.max(0, Math.min(1, t));
     target = {
-      r: Math.round(base.r + (red.r - base.r) * t),
-      g: Math.round(base.g + (red.g - base.g) * t),
-      b: Math.round(base.b + (red.b - base.b) * t)
+      r: Math.round(baseObj.r + (redObj.r - baseObj.r) * t),
+      g: Math.round(baseObj.g + (redObj.g - baseObj.g) * t),
+      b: Math.round(baseObj.b + (redObj.b - baseObj.b) * t)
     };
   }
 
   return `rgb(${target.r},${target.g},${target.b})`;
 }
+
 
 
 /* ===== DOM helpers ===== */
@@ -342,7 +376,7 @@ function updateDateBar() {
   const oldest = getOldestStoredDayKeyOrNull();
 
   // Label: Today -> "Heute", otherwise show date
-  dateLabel.textContent = (selectedDayKey === todayKey) ? "Heute" : formatDateKeyGerman(selectedDayKey);
+dateLabel.textContent = (selectedDayKey === todayKey) ? t("today") : formatDateKeyGerman(selectedDayKey);
 
   // Can go forward only until today
   btnNextDay.disabled = (selectedDayKey === todayKey);
@@ -442,7 +476,7 @@ importFile.addEventListener("change", async () => {
     renderAll();
     setTab("day");
   } catch {
-    alert("Import fehlgeschlagen. Bitte eine gültige Export JSON Datei wählen.");
+alert(t("importFailed"));
   }
 });
 
@@ -450,7 +484,8 @@ importFile.addEventListener("change", async () => {
 const btnOpenGoals = $("#btnOpenGoals");
 
 btnOpenGoals.addEventListener("click", () => {
-  openModal("Ziele bearbeiten", (container) => {
+  openModal(t("editGoals"), (container) => {
+
     const form = document.createElement("form");
     form.className = "modalRow";
 
@@ -861,7 +896,7 @@ function openRecipeEditorModal(id, keepDraft = false) {
     const addBtn = form.querySelector("#mAddIngredientToRecipe");
     addBtn.addEventListener("click", () => {
       if (state.ingredients.length === 0) {
-        alert("Du brauchst zuerst Zutaten.");
+alert(t("needIngredientsFirst"));
         return;
       }
 
@@ -917,10 +952,11 @@ function openRecipeEditorModal(id, keepDraft = false) {
 }
 
 function openIngredientPickerForRecipe(onDone) {
-  openModal("Zutat hinzufügen", (container) => {
+  openModal(t("addIngredient"), (container) => {
+
     const search = document.createElement("input");
     search.className = "searchInput";
-    search.placeholder = "Suchen...";
+search.placeholder = t("searchPlaceholder");
     search.inputMode = "search";
     container.appendChild(search);
 
@@ -960,7 +996,7 @@ function openIngredientPickerForRecipe(onDone) {
 
         const btn = document.createElement("button");
         btn.className = "btn";
-        btn.textContent = "Hinzufügen";
+btn.textContent = t("addButtonToRecipe");
         btn.addEventListener("click", () => {
           const n = parseNumber(amount.value);
           if (!Number.isFinite(n) || n <= 0) {
@@ -979,7 +1015,7 @@ function openIngredientPickerForRecipe(onDone) {
       if (items.length === 0) {
         const h = document.createElement("div");
         h.className = "hint";
-        h.textContent = "Keine Treffer.";
+h.textContent = t("noHits");
         list.appendChild(h);
       }
     }
@@ -1006,17 +1042,22 @@ const dayFatPct = $("#dayFatPct");
 
 function openMealModal(mealKey) {
   const meal = MEALS.find(m => m.key === mealKey);
-  const mealLabel = meal ? meal.label : "Einträge";
+const mealLabel = meal ? t(meal.labelKey) : t("entries");
+const dateLabelText =
+  (selectedDayKey === nowDayKeyRollover0430())
+    ? t("today")
+    : formatDateKeyGerman(selectedDayKey);
 
-  const title = `${mealLabel} · ${selectedDayKey === nowDayKeyRollover0430() ? "Heute" : formatDateKeyGerman(selectedDayKey)}`;
+const title = `${mealLabel} · ${dateLabelText}`;
 
   openModal(title, (container) => {
     const actions = document.createElement("div");
     actions.className = "row wrap";
     actions.innerHTML = `
-      <button class="btn btn--big" id="mAddIng">Zutat hinzufügen</button>
-      <button class="btn btn--big" id="mAddRec">Gericht hinzufügen</button>
-    `;
+  <button class="btn btn--big" id="mAddIng">${escapeHtml(t("addIngredient"))}</button>
+  <button class="btn btn--big" id="mAddRec">${escapeHtml(t("addRecipe"))}</button>
+`;
+
     container.appendChild(actions);
 
     const list = document.createElement("div");
@@ -1025,7 +1066,7 @@ function openMealModal(mealKey) {
 
     const hint = document.createElement("div");
     hint.className = "hint";
-    hint.textContent = "Noch keine Einträge.";
+hint.textContent = t("noEntries");
     container.appendChild(hint);
 
     function getVisibleEntriesForMeal() {
@@ -1125,7 +1166,7 @@ function openMealModal(mealKey) {
 
     btnRec.addEventListener("click", () => {
       if (state.recipes.length === 0) {
-        alert("Du brauchst zuerst ein Gericht.");
+alert(t("needRecipeFirst"));
         setTab("recipes");
         closeModal();
         return;
@@ -1139,10 +1180,10 @@ function openMealModal(mealKey) {
 }
 
 function openIngredientPickerForDay(mealKey, onDone) {
-  openModal("Zutat hinzufügen", (container) => {
+  openModal(t("addIngredient"), (container) => {
     const search = document.createElement("input");
     search.className = "searchInput";
-    search.placeholder = "Suchen...";
+search.placeholder = t("searchPlaceholder");
     search.inputMode = "search";
     container.appendChild(search);
 
@@ -1182,7 +1223,7 @@ function openIngredientPickerForDay(mealKey, onDone) {
 
         const btn = document.createElement("button");
         btn.className = "btn";
-        btn.textContent = "Eintragen";
+btn.textContent = t("addButton");
         btn.addEventListener("click", () => {
           const n = parseNumber(amount.value);
           if (!Number.isFinite(n) || n <= 0) {
@@ -1210,7 +1251,7 @@ function openIngredientPickerForDay(mealKey, onDone) {
       if (items.length === 0) {
         const h = document.createElement("div");
         h.className = "hint";
-        h.textContent = "Keine Treffer.";
+h.textContent = t("noHits");
         list.appendChild(h);
       }
     }
@@ -1221,10 +1262,11 @@ function openIngredientPickerForDay(mealKey, onDone) {
 }
 
 function openRecipePickerForDay(mealKey, onDone) {
-  openModal("Gericht hinzufügen", (container) => {
+  openModal(t("addRecipe"), (container) => {
+
     const search = document.createElement("input");
     search.className = "searchInput";
-    search.placeholder = "Suchen...";
+search.placeholder = t("searchPlaceholder");
     search.inputMode = "search";
     container.appendChild(search);
 
@@ -1265,7 +1307,7 @@ function openRecipePickerForDay(mealKey, onDone) {
 
         const btn = document.createElement("button");
         btn.className = "btn";
-        btn.textContent = "Eintragen";
+btn.textContent = t("addButton");
         btn.addEventListener("click", () => {
           const n = parseNumber(factor.value);
           if (!Number.isFinite(n) || n <= 0) {
@@ -1293,7 +1335,7 @@ function openRecipePickerForDay(mealKey, onDone) {
       if (items.length === 0) {
         const h = document.createElement("div");
         h.className = "hint";
-        h.textContent = "Keine Treffer.";
+h.textContent = t("noHits");
         list.appendChild(h);
       }
     }
@@ -1415,40 +1457,46 @@ const dayRefP100kcal = (state.goals.kcal > 0)
   // Render meal blocks overview
   mealBlocks.innerHTML = "";
 
+    // Render meal blocks overview
+  mealBlocks.innerHTML = "";
+
   for (const meal of MEALS) {
     const mealEntries = visibleEntries.filter(e => normalizeEntryMeal(e) === meal.key);
-    const t = calcTotalsForEntries(mealEntries);
+    const totals = calcTotalsForEntries(mealEntries);
 
-    const p100prot = eurosPer100gProtein(t);
-    const p100kcal = eurosPer100kcal(t);
+    const p100prot = eurosPer100gProtein(totals);
+    const p100kcal = eurosPer100kcal(totals);
 
     const block = document.createElement("div");
     block.className = "mealBlock";
     block.addEventListener("click", () => openMealModal(meal.key));
 
-    const priceText = euroPlain(t.price);
+    const priceText = euroPlain(totals.price);
 
-    const kcalText = `${Math.round(t.kcal)}`;
-    const protText = `${round1(t.protein).replace(".", ",")}`;
-    const carbsText = `${round1(t.carbs).replace(".", ",")}`;
-    const fatText = `${round1(t.fat).replace(".", ",")}`;
+    const kcalText = `${Math.round(totals.kcal)}`;
+    const protText = `${round1(totals.protein).replace(".", ",")}`;
+    const carbsText = `${round1(totals.carbs).replace(".", ",")}`;
+    const fatText = `${round1(totals.fat).replace(".", ",")}`;
 
-    const kcalPct = `${pctOfGoal(t.kcal, state.goals.kcal)}%`;
-    const protPct = `${pctOfGoal(t.protein, state.goals.protein)}%`;
-    const carbsPct = `${pctOfGoal(t.carbs, state.goals.carbs)}%`;
-    const fatPct = `${pctOfGoal(t.fat, state.goals.fat)}%`;
-    const pricePct = `${pctOfGoal(t.price, state.goals.price)}%`;
+    const kcalPct = `${pctOfGoal(totals.kcal, state.goals.kcal)}%`;
+    const protPct = `${pctOfGoal(totals.protein, state.goals.protein)}%`;
+    const carbsPct = `${pctOfGoal(totals.carbs, state.goals.carbs)}%`;
+    const fatPct = `${pctOfGoal(totals.fat, state.goals.fat)}%`;
+    const pricePct = `${pctOfGoal(totals.price, state.goals.price)}%`;
 
     const p100protText = Number.isFinite(p100prot) ? euroPlain(p100prot) : "n/a";
     const p100kcalText = Number.isFinite(p100kcal) ? euroPlain(p100kcal) : "n/a";
 
-    const protColor = ratioColor(p100prot, dayRefP100prot);
-const kcalColor = ratioColor(p100kcal, dayRefP100kcal);
+        const refProtLabel = Number.isFinite(dayRefP100prot) ? ` (Ø ${euroPlain(dayRefP100prot)})` : "";
+    const refKcalLabel = Number.isFinite(dayRefP100kcal) ? ` (Ø ${euroPlain(dayRefP100kcal)})` : "";
 
+
+    const protColor = ratioColor(p100prot, dayRefP100prot);
+    const kcalColor = ratioColor(p100kcal, dayRefP100kcal);
 
     block.innerHTML = `
       <div class="mealTop">
-        <div class="mealTitle">${escapeHtml(meal.label)}</div>
+        <div class="mealTitle">${escapeHtml(t(meal.labelKey))}</div>
         <div class="mealPrice">${escapeHtml(priceText)} €</div>
       </div>
 
@@ -1460,19 +1508,19 @@ const kcalColor = ratioColor(p100kcal, dayRefP100kcal);
         </div>
 
         <div class="mealLine">
-          <div class="mealLineLabel">Protein (g)</div>
+<div class="mealLineLabel">${escapeHtml(t("proteinLabel"))}</div>
           <div class="mealLineValue">${escapeHtml(protText)}</div>
           <div class="mealLinePct">${escapeHtml(protPct)}</div>
         </div>
 
         <div class="mealLine">
-          <div class="mealLineLabel">Kohlenhydrate (g)</div>
+<div class="mealLineLabel">${escapeHtml(t("carbsLabel"))}</div>
           <div class="mealLineValue">${escapeHtml(carbsText)}</div>
           <div class="mealLinePct">${escapeHtml(carbsPct)}</div>
         </div>
 
         <div class="mealLine">
-          <div class="mealLineLabel">Fett (g)</div>
+<div class="mealLineLabel">${escapeHtml(t("fatLabel"))}</div>
           <div class="mealLineValue">${escapeHtml(fatText)}</div>
           <div class="mealLinePct">${escapeHtml(fatPct)}</div>
         </div>
@@ -1480,15 +1528,23 @@ const kcalColor = ratioColor(p100kcal, dayRefP100kcal);
 
       <div class="mealRatios">
         <div class="mealRatioRow">
-          <div class="mealRatioLabel">€ / 100 g Protein</div>
-          <div class="mealRatioValue" style="color:${escapeHtml(protColor)}">${escapeHtml(p100protText)}</div>
+                    <div class="mealRatioLabel">${escapeHtml(t("ratioProteinLabel") + refProtLabel)}</div>
+          <div class="mealRatioValue" style="color:${escapeHtml(protColor)}">
+            ${escapeHtml(p100protText)}
+          </div>
+
         </div>
+
         <div class="mealRatioRow">
-          <div class="mealRatioLabel">€ / 100 kcal</div>
-          <div class="mealRatioValue" style="color:${escapeHtml(kcalColor)}">${escapeHtml(p100kcalText)}</div>
+                    <div class="mealRatioLabel">${escapeHtml(t("ratioKcalLabel") + refKcalLabel)}</div>
+          <div class="mealRatioValue" style="color:${escapeHtml(kcalColor)}">
+            ${escapeHtml(p100kcalText)}
+          </div>
+
         </div>
+
         <div class="mealRatioRow">
-          <div class="mealRatioLabel">Preis % Tagesziel</div>
+<div class="mealRatioLabel">${escapeHtml(t("ratioPricePctLabel"))}</div>
           <div class="mealRatioValue">${escapeHtml(pricePct)}</div>
         </div>
       </div>
@@ -1496,6 +1552,7 @@ const kcalColor = ratioColor(p100kcal, dayRefP100kcal);
 
     mealBlocks.appendChild(block);
   }
+
 }
 
 /* ===== Ingredients tab render ===== */
@@ -1574,6 +1631,275 @@ function renderRecipes() {
   }
 }
 
+/* ===== Language (de/en) ===== */
+const LANG_KEY = "kcal_tracker_lang"; // "de" | "en"
+
+const I18N = {
+  de: {
+
+    kcalLabel: "kcal",
+    proteinLabel: "Protein (g)",
+    priceLabel: "Preis (€)",
+    carbsLabel: "Kohlenhydrate (g)",
+    fatLabel: "Fett (g)",
+    dataLabel: "Daten",
+
+    addIngredient: "Zutat hinzufügen",
+    addRecipe: "Gericht hinzufügen",
+    addButton: "Eintragen",
+    addButtonRecipe: "Eintragen",
+    addButtonToRecipe: "Hinzufügen",
+    removeButton: "Entfernen",
+    deleteButton: "Löschen",
+
+    noEntries: "Noch keine Einträge.",
+    noHits: "Keine Treffer.",
+    searchPlaceholder: "Suchen...",
+
+    ratioProteinLabel: "€ / 100 g Protein",
+    ratioKcalLabel: "€ / 100 kcal",
+    ratioPricePctLabel: "Preis % Tagesziel",
+
+    today: "Heute",
+    goals: "Ziele",
+    dark: "Dark",
+    light: "Light",
+
+    tabDay: "Tag",
+    tabRecipes: "Gerichte",
+    tabIngredients: "Zutaten",
+
+    recipesTitle: "Gerichte",
+    newRecipe: "Neues Gericht",
+    searchRecipes: "Gerichte suchen...",
+    emptyRecipes: "Noch keine Gerichte.",
+
+    ingredientsTitle: "Zutaten",
+    newIngredient: "Neue Zutat",
+    searchIngredients: "Zutaten suchen...",
+    emptyIngredients: "Noch keine Zutaten.",
+
+    modalClose: "Schließen",
+    data: "Daten",
+    export: "Export",
+    import: "Import",
+
+    // meals
+    breakfast: "Frühstück",
+    lunch: "Mittagessen",
+    snacks: "Snacks",
+    dinner: "Abendessen",
+
+    // common strings (alerts)
+    needIngredientsFirst: "Du brauchst zuerst Zutaten.",
+    needRecipeFirst: "Du brauchst zuerst ein Gericht.",
+    importFailed: "Import fehlgeschlagen. Bitte eine gültige Export JSON Datei wählen."
+  },
+  en: {
+
+    kcalLabel: "kcal",
+    proteinLabel: "Protein (g)",
+    priceLabel: "Price (€)",
+    carbsLabel: "Carbs (g)",
+    fatLabel: "Fat (g)",
+    dataLabel: "Data",
+
+    addIngredient: "Add ingredient",
+    addRecipe: "Add recipe",
+    addButton: "Log",
+    addButtonRecipe: "Log",
+    addButtonToRecipe: "Add",
+    removeButton: "Remove",
+    deleteButton: "Delete",
+
+    noEntries: "No entries yet.",
+    noHits: "No results.",
+    searchPlaceholder: "Search...",
+
+    ratioProteinLabel: "€ / 100 g protein",
+    ratioKcalLabel: "€ / 100 kcal",
+    ratioPricePctLabel: "Price % daily goal",
+
+    today: "Today",
+    goals: "Goals",
+    dark: "Dark",
+    light: "Light",
+
+    tabDay: "Day",
+    tabRecipes: "Recipes",
+    tabIngredients: "Ingredients",
+
+    recipesTitle: "Recipes",
+    newRecipe: "New recipe",
+    searchRecipes: "Search recipes...",
+    emptyRecipes: "No recipes yet.",
+
+    ingredientsTitle: "Ingredients",
+    newIngredient: "New ingredient",
+    searchIngredients: "Search ingredients...",
+    emptyIngredients: "No ingredients yet.",
+
+    modalClose: "Close",
+    data: "Data",
+    export: "Export",
+    import: "Import",
+
+    breakfast: "Breakfast",
+    lunch: "Lunch",
+    snacks: "Snacks",
+    dinner: "Dinner",
+
+    needIngredientsFirst: "You need ingredients first.",
+    needRecipeFirst: "You need a recipe first.",
+    importFailed: "Import failed. Please select a valid export JSON file."
+  }
+};
+
+function loadLanguage() {
+  const l = localStorage.getItem(LANG_KEY);
+  return (l === "de" || l === "en") ? l : "de";
+}
+
+function setLanguage(lang) {
+  localStorage.setItem(LANG_KEY, lang);
+  applyLanguage(lang);
+}
+
+function t(key) {
+  const lang = loadLanguage();
+  return (I18N[lang] && I18N[lang][key]) ? I18N[lang][key] : key;
+}
+
+function applyLanguage(lang) {
+  // html lang attribute
+  document.documentElement.lang = (lang === "en") ? "en" : "de";
+
+  // Toggle buttons
+  const bDe = document.querySelector("#btnLangDE");
+  const bEn = document.querySelector("#btnLangEN");
+  if (bDe) bDe.classList.toggle("langBtn--active", lang === "de");
+  if (bEn) bEn.classList.toggle("langBtn--active", lang === "en");
+
+  // Static UI texts (by ids)
+  const elGoals = document.querySelector("#btnOpenGoals");
+  if (elGoals) elGoals.textContent = t("goals");
+
+  const elDark = document.querySelector("#btnThemeDark");
+  const elLight = document.querySelector("#btnThemeLight");
+  if (elDark) elDark.textContent = t("dark");
+  if (elLight) elLight.textContent = t("light");
+
+  const elExport = document.querySelector("#btnExport");
+  const elImport = document.querySelector("#btnImport");
+  if (elExport) elExport.textContent = t("export");
+  if (elImport) elImport.textContent = t("import");
+
+  const elModalClose = document.querySelector("#modalClose");
+  if (elModalClose) elModalClose.textContent = t("modalClose");
+
+  // Tab buttons (bottom nav)
+  const tabBtns = Array.from(document.querySelectorAll(".tabBtn"));
+  tabBtns.forEach(btn => {
+    const nav = btn.dataset.nav;
+    if (nav === "day") btn.textContent = t("tabDay");
+    if (nav === "recipes") btn.textContent = t("tabRecipes");
+    if (nav === "ingredients") btn.textContent = t("tabIngredients");
+  });
+
+  // Titles and placeholders
+  const recipesTitle = document.querySelector("#tab-recipes .h2");
+  if (recipesTitle) recipesTitle.textContent = t("recipesTitle");
+  const ingredientsTitle = document.querySelector("#tab-ingredients .h2");
+  if (ingredientsTitle) ingredientsTitle.textContent = t("ingredientsTitle");
+
+  const btnNewRecipe = document.querySelector("#btnNewRecipe");
+  if (btnNewRecipe) btnNewRecipe.textContent = t("newRecipe");
+  const btnNewIngredient = document.querySelector("#btnNewIngredient");
+  if (btnNewIngredient) btnNewIngredient.textContent = t("newIngredient");
+
+  const recipesSearch = document.querySelector("#recipesSearch");
+  if (recipesSearch) recipesSearch.placeholder = t("searchRecipes");
+  const ingredientsSearch = document.querySelector("#ingredientsSearch");
+  if (ingredientsSearch) ingredientsSearch.placeholder = t("searchIngredients");
+
+  const recipesEmpty = document.querySelector("#recipesEmptyHint");
+  if (recipesEmpty) recipesEmpty.textContent = t("emptyRecipes");
+  const ingredientsEmpty = document.querySelector("#ingredientsEmptyHint");
+  if (ingredientsEmpty) ingredientsEmpty.textContent = t("emptyIngredients");
+
+
+    const lblKcal = document.querySelector("#lblKcal");
+  if (lblKcal) lblKcal.textContent = t("kcalLabel");
+
+  const lblProtein = document.querySelector("#lblProtein");
+  if (lblProtein) lblProtein.textContent = t("proteinLabel");
+
+  const lblPrice = document.querySelector("#lblPrice");
+  if (lblPrice) lblPrice.textContent = t("priceLabel");
+
+  const lblCarbs = document.querySelector("#lblCarbs");
+  if (lblCarbs) lblCarbs.textContent = t("carbsLabel");
+
+  const lblFat = document.querySelector("#lblFat");
+  if (lblFat) lblFat.textContent = t("fatLabel");
+
+  const lblData = document.querySelector("#lblData");
+  if (lblData) lblData.textContent = t("dataLabel");
+
+
+  // Rerender dynamic parts (meal labels etc.)
+  renderAll();
+}
+
+
+/* ===== Theme toggle (dark/light) ===== */
+const THEME_KEY = "kcal_tracker_theme"; // "dark" | "light"
+
+function applyTheme(theme) {
+  const isLight = theme === "light";
+
+  document.documentElement.classList.toggle("theme--light", isLight);
+  document.body.classList.toggle("theme--light", isLight); // wichtig, wenn CSS body:not(...)
+
+  const bDark = document.querySelector("#btnThemeDark");
+  const bLight = document.querySelector("#btnThemeLight");
+  if (bDark) bDark.classList.toggle("themeBtn--active", !isLight);
+  if (bLight) bLight.classList.toggle("themeBtn--active", isLight);
+}
+
+
+
+function loadTheme() {
+  const t = localStorage.getItem(THEME_KEY);
+  return (t === "light" || t === "dark") ? t : "dark";
+}
+
+function setTheme(theme) {
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme(theme);
+}
+
+/* init theme */
+applyTheme(loadTheme());
+
+applyLanguage(loadLanguage());
+
+
+/* wire buttons */
+const btnThemeDark = document.querySelector("#btnThemeDark");
+const btnThemeLight = document.querySelector("#btnThemeLight");
+
+if (btnThemeDark) btnThemeDark.addEventListener("click", () => setTheme("dark"));
+if (btnThemeLight) btnThemeLight.addEventListener("click", () => setTheme("light"));
+
+const btnLangDE = document.querySelector("#btnLangDE");
+const btnLangEN = document.querySelector("#btnLangEN");
+
+if (btnLangDE) btnLangDE.addEventListener("click", () => setLanguage("de"));
+if (btnLangEN) btnLangEN.addEventListener("click", () => setLanguage("en"));
+
+
 /* ===== Initial ===== */
 renderAll();
 setTab("day");
+

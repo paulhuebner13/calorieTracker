@@ -25,17 +25,17 @@
         <div class="row row--space row--top row--stackMobile">
           <div class="metrics3">
             <div class="metric metric--kcal">
-              <div class="metric__label">kcal</div>
+<div class="metric__label" id="lblKcal">kcal</div>
               <div class="metric__value" id="dayKcalValue">0</div>
               <div class="metric__sub" id="dayKcalPct">0%</div>
             </div>
             <div class="metric metric--protein">
-              <div class="metric__label">Protein (g)</div>
+<div class="metric__label" id="lblProtein">Protein (g)</div>
               <div class="metric__value" id="dayProteinValue">0</div>
               <div class="metric__sub" id="dayProteinPct">0%</div>
             </div>
             <div class="metric metric--price">
-              <div class="metric__label">Preis (€)</div>
+<div class="metric__label" id="lblPrice">Preis (€)</div>
               <div class="metric__value" id="dayPriceValue">0,00</div>
               <div class="metric__sub" id="dayPricePct">0%</div>
             </div>
@@ -45,19 +45,19 @@
         <!-- mini row: carbs/fat/data + goals moved here -->
         <div class="miniRow">
           <div class="miniMetric">
-            <div class="miniMetric__label">Kohlenhydrate (g)</div>
+<div class="miniMetric__label" id="lblCarbs">Kohlenhydrate (g)</div>
             <div class="miniMetric__value" id="dayCarbsValue">0,0</div>
             <div class="miniMetric__sub" id="dayCarbsPct">0%</div>
           </div>
 
           <div class="miniMetric">
-            <div class="miniMetric__label">Fett (g)</div>
+<div class="miniMetric__label" id="lblFat">Fett (g)</div>
             <div class="miniMetric__value" id="dayFatValue">0,0</div>
             <div class="miniMetric__sub" id="dayFatPct">0%</div>
           </div>
 
           <div class="miniData">
-            <div class="miniMetric__label">Daten</div>
+<div class="miniMetric__label" id="lblData">Daten</div>
             <div class="miniData__buttons">
               <button class="btn btn--tiny btn--ghost" id="btnExport">Export</button>
               <button class="btn btn--tiny btn--ghost" id="btnImport">Import</button>
@@ -74,7 +74,18 @@
 <div class="dayGoalAction">
   <button class="btn btn--ghost btn--big" id="btnOpenGoals">Ziele</button>
 
-            </div>
+  <div class="themeToggle" role="group" aria-label="Theme">
+  <button class="themeBtn" id="btnThemeDark" type="button">Dark</button>
+  <button class="themeBtn" id="btnThemeLight" type="button">Light</button>
+</div>
+
+<div class="langToggle" role="group" aria-label="Language">
+  <button class="langBtn" id="btnLangDE" type="button">🇦🇹 Deutsch</button>
+  <button class="langBtn" id="btnLangEN" type="button">🇬🇧 English</button>
+</div>
+
+</div>
+
 
 
     </section>
