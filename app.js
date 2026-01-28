@@ -221,34 +221,53 @@ function calcRecipeTotals(recipe) {
   return t;
 }
 
-/* ===== Ratio coloring vs day average ===== */
-function ratioColor(value, avg) {
-  // White if equal. Green if cheaper (value < avg). Red if more expensive.
-  // We compute a smooth intensity based on relative difference, capped.
-  if (!Number.isFinite(value) || !Number.isFinite(avg) || avg <= 0) {
+/* ===== Ratio coloring vs FIXED daily reference ===== */
+function ratioColor(value, reference) {
+  // value and reference are both "€ / 100 ..." values.
+  // White if value == reference (within tolerance).
+  // Green if cheaper than reference, red if more expensive.
+  // Max green at 0.5x, max red at 2x.
+
+  if (!Number.isFinite(value) || !Number.isFinite(reference) || reference <= 0) {
     return "rgba(242,244,248,0.90)";
   }
 
-  const diff = (value - avg) / avg; // negative => green, positive => red
-  const cap = 0.35;
-  const d = Math.max(-cap, Math.min(cap, diff));
-  const t = Math.abs(d) / cap; // 0..1
+  const ratio = value / reference; // 1.0 => perfect
+  const EPS = 0.03; // 3% tolerance for "white"
+  if (Math.abs(ratio - 1) <= EPS) {
+    return "rgb(242,244,248)";
+  }
 
-  // base text is near-white
   const base = { r: 242, g: 244, b: 248 };
+  const green = { r: 70, g: 200, b: 120 };
+  const red = { r: 255, g: 107, b: 107 };
 
-  // target green/red (not neon)
-  const green = { r: 140, g: 255, b: 180 };
-  const red = { r: 255, g: 140, b: 140 };
+  let t = 0;
+  let target = base;
 
-  const target = (d < 0) ? green : (d > 0 ? red : base);
+  if (ratio < 1) {
+    // ratio 0.5 -> max green, ratio 1 -> white
+    t = (ratio - 0.5) / (1.0 - 0.5); // 0..1
+    t = Math.max(0, Math.min(1, t));
+    target = {
+      r: Math.round(green.r + (base.r - green.r) * t),
+      g: Math.round(green.g + (base.g - green.g) * t),
+      b: Math.round(green.b + (base.b - green.b) * t)
+    };
+  } else {
+    // ratio 1 -> white, ratio 2 -> max red
+    t = (ratio - 1.0) / (2.0 - 1.0); // 0..1
+    t = Math.max(0, Math.min(1, t));
+    target = {
+      r: Math.round(base.r + (red.r - base.r) * t),
+      g: Math.round(base.g + (red.g - base.g) * t),
+      b: Math.round(base.b + (red.b - base.b) * t)
+    };
+  }
 
-  const r = Math.round(base.r + (target.r - base.r) * t);
-  const g = Math.round(base.g + (target.g - base.g) * t);
-  const b = Math.round(base.b + (target.b - base.b) * t);
-
-  return `rgb(${r},${g},${b})`;
+  return `rgb(${target.r},${target.g},${target.b})`;
 }
+
 
 /* ===== DOM helpers ===== */
 const $ = (sel) => document.querySelector(sel);
@@ -1383,9 +1402,15 @@ function renderDay() {
   const hasAny = visibleEntries.length > 0;
   dayEmptyHint.classList.toggle("hidden", hasAny);
 
-  // Day average ratios for coloring comparisons
-  const dayAvgP100prot = eurosPer100gProtein(dayTotals);
-  const dayAvgP100kcal = eurosPer100kcal(dayTotals);
+// Fixed daily reference ratios (based on goals)
+const dayRefP100prot = (state.goals.protein > 0)
+  ? (state.goals.price / state.goals.protein) * 100
+  : NaN;
+
+const dayRefP100kcal = (state.goals.kcal > 0)
+  ? (state.goals.price / state.goals.kcal) * 100
+  : NaN;
+
 
   // Render meal blocks overview
   mealBlocks.innerHTML = "";
@@ -1417,8 +1442,9 @@ function renderDay() {
     const p100protText = Number.isFinite(p100prot) ? euroPlain(p100prot) : "n/a";
     const p100kcalText = Number.isFinite(p100kcal) ? euroPlain(p100kcal) : "n/a";
 
-    const protColor = ratioColor(p100prot, dayAvgP100prot);
-    const kcalColor = ratioColor(p100kcal, dayAvgP100kcal);
+    const protColor = ratioColor(p100prot, dayRefP100prot);
+const kcalColor = ratioColor(p100kcal, dayRefP100kcal);
+
 
     block.innerHTML = `
       <div class="mealTop">
