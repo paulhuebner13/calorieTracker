@@ -29,11 +29,18 @@ body{
 /* Leave room for date bar + tabs */
 .content{
   min-height: 100dvh;
-  padding: max(14px, env(safe-area-inset-top)) 14px calc(140px + env(safe-area-inset-bottom)) 14px;
+  padding: max(14px, env(safe-area-inset-top)) 14px calc(180px + env(safe-area-inset-bottom)) 14px;
   width: 100%;
   max-width: 980px;
   margin: 0 auto;
 }
+
+@media (pointer: coarse){
+  .content{
+    padding-bottom: calc(360px + env(safe-area-inset-bottom));
+  }
+}
+
 
 .card{
   background: var(--card);
