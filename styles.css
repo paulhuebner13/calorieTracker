@@ -638,3 +638,48 @@ body{
   color: rgba(242,244,248,0.65);
 }
 
+/* ===== FORCE same font size everywhere inside meal blocks (desktop + mobile) ===== */
+
+:root{
+  --meal-font: 18px; /* hier steuerst du ALLES */
+}
+
+.mealBlock{
+  font-size: var(--meal-font);
+}
+
+/* ALLES im Block erbt die gleiche Größe */
+.mealBlock .mealLineLabel,
+.mealBlock .mealLineValue,
+.mealBlock .mealLinePct,
+.mealBlock .mealRatioLabel,
+.mealBlock .mealRatioValue{
+  font-size: inherit !important;
+  line-height: 1.15;
+}
+
+/* nur Gewicht/Farbe unterscheiden (aber NICHT die Größe) */
+.mealBlock .mealLineLabel,
+.mealBlock .mealRatioLabel{
+  font-weight: 600;
+  color: rgba(242,244,248,0.65);
+}
+
+.mealBlock .mealLineValue,
+.mealBlock .mealLinePct,
+.mealBlock .mealRatioValue{
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* Prozent leicht gedimmt */
+.mealBlock .mealLinePct{
+  color: rgba(242,244,248,0.60);
+}
+
+/* ===== meal block border: whiter & more prominent ===== */
+.mealBlock{
+  border-width: 2px;
+  border-color: rgba(255,255,255,0.28);
+}
+
