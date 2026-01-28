@@ -683,3 +683,21 @@ body{
   border-color: rgba(255,255,255,0.28);
 }
 
+/* ===== Bigger titles for ingredient / recipe names (lists & modals) ===== */
+
+.item__title{
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+@media (pointer: coarse){
+  .item__title{
+    font-size: calc(20px * var(--ui-scale));
+  }
+}
+
+/* smoother scroll on tappable meal blocks */
+.mealBlock{
+  touch-action: pan-y;
+}
