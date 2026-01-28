@@ -872,32 +872,11 @@ html:not(.theme--light) .tabBtn--active{
 
 /* 2) Meals: Zahlen kleiner (überschreibt pointer:coarse scaling sicher) */
 @media (pointer: coarse), (max-width: 520px){
-  .mealBlock{
-    font-size: 14px !important; /* Basis-Text in Meal-Karte */
-  }
-
-  .mealTitle,
-  .mealPrice{
-    font-size: 18px !important;
-  }
-
-  .mealLineLabel{
-    font-size: 12px !important;
-  }
 
   .mealLineValue{
     font-size: 28px !important;  /* <-- DAS ist die große Zahl */
     line-height: 1.05 !important;
   }
 
-  .mealLinePct{
-    font-size: 12px !important;
-    line-height: 1.1 !important;
-  }
-
-  .mealRatioLabel,
-  .mealRatioValue{
-    font-size: 12px !important;
-  }
 }
 
