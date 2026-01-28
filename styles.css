@@ -886,7 +886,7 @@ html:not(.theme--light) .tabBtn--active{
   }
 
   .mealLineValue{
-    font-size: 20px !important;  /* <-- DAS ist die große Zahl */
+    font-size: 28px !important;  /* <-- DAS ist die große Zahl */
     line-height: 1.05 !important;
   }
 
