@@ -701,3 +701,31 @@ body{
 .mealBlock{
   touch-action: pan-y;
 }
+
+/* ===== FINAL OVERRIDE: Meal headings bigger everywhere ===== */
+
+.mealTitle{
+  font-size: 24px !important;
+  font-weight: 980;
+  letter-spacing: -0.3px;
+}
+
+@media (pointer: coarse){
+  .mealTitle{
+    font-size: calc(24px * var(--ui-scale)) !important;
+  }
+}
+
+/* ===== FINAL OVERRIDE: Ingredient & Recipe titles big ===== */
+
+.item__title{
+  font-size: 22px !important;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+@media (pointer: coarse){
+  .item__title{
+    font-size: calc(22px * var(--ui-scale)) !important;
+  }
+}
