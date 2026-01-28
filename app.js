@@ -6,20 +6,23 @@ const LS_KEY = "kcal_tracker_v3";
   State:
   - ingredients: { id, name, brand, unitType, kcal, protein, carbs, fat, price }  (per base)
   - recipes: { id, name, items: [{ ingredientId, amount }] }                     (amount in g/ml/pieces)
-  - dayLogs: { [dateKey]: [{ id, type, refId, amount }] }                        (ingredient amount, recipe factor)
+  - dayLogs: { [dateKey]: [{ id, type, refId, amount, meal? }] }                 (meal is optional for backward compatibility)
   - goals: { kcal, protein, price, carbs, fat }
+
+  Notes:
+  - We do NOT break old imports. meal is optional and defaults to "snacks".
+  - We use a day rollover at 04:30 local time.
 */
+
+const MEALS = [
+  { key: "breakfast", label: "Frühstück" },
+  { key: "lunch", label: "Mittagessen" },
+  { key: "snacks", label: "Snacks" },
+  { key: "dinner", label: "Abendessen" }
+];
 
 function uid() {
   return Math.random().toString(16).slice(2) + Date.now().toString(16);
-}
-
-function todayKey() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
 }
 
 function parseNumber(input) {
@@ -44,9 +47,12 @@ function round2(x) {
   return (Math.round(x * 100) / 100).toFixed(2);
 }
 
+function euroPlain(x) {
+  return round2(x).replace(".", ",");
+}
+
 function euro(x) {
-  const s = `€ ${round2(x)}`;
-  return s.replace(".", ",");
+  return `€ ${euroPlain(x)}`;
 }
 
 function escapeHtml(s) {
@@ -90,6 +96,46 @@ function lineFull(price, kcal, protein, carbs, fat) {
   return `Preis ${euro(price)} · kcal ${Math.round(kcal)} · Protein ${round1(protein).replace(".", ",")} g · KH ${round1(carbs).replace(".", ",")} g · Fett ${round1(fat).replace(".", ",")} g ${ratiosText(price, kcal, protein)}`;
 }
 
+/* ===== Date handling (04:30 rollover) ===== */
+function dayKeyFromDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function dateFromDayKey(key) {
+  const parts = String(key).split("-");
+  if (parts.length !== 3) return new Date();
+  const y = Number(parts[0]);
+  const m = Number(parts[1]) - 1;
+  const d = Number(parts[2]);
+  const dt = new Date(y, m, d);
+  return Number.isFinite(dt.getTime()) ? dt : new Date();
+}
+
+function nowDayKeyRollover0430() {
+  const now = new Date();
+  // shift backwards 4h30m so that 00:00-04:29 belong to previous day
+  const shifted = new Date(now.getTime() - (4 * 60 + 30) * 60 * 1000);
+  return dayKeyFromDate(shifted);
+}
+
+function formatDateKeyGerman(key) {
+  const d = dateFromDayKey(key);
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yy = d.getFullYear();
+  return `${dd}.${mm}.${yy}`;
+}
+
+/* ===== State load/save with backward compatible import ===== */
 function loadState() {
   const raw = localStorage.getItem(LS_KEY);
   const defaults = { kcal: 2500, protein: 160, price: 15, carbs: 300, fat: 80 };
@@ -105,6 +151,7 @@ function loadState() {
     if (!s.dayLogs || typeof s.dayLogs !== "object") s.dayLogs = {};
     if (!s.goals || typeof s.goals !== "object") s.goals = { ...defaults };
 
+    // Ensure goals contain all fields (backward compatible)
     s.goals.kcal = Number.isFinite(s.goals.kcal) ? s.goals.kcal : defaults.kcal;
     s.goals.protein = Number.isFinite(s.goals.protein) ? s.goals.protein : defaults.protein;
     s.goals.price = Number.isFinite(s.goals.price) ? s.goals.price : defaults.price;
@@ -119,6 +166,9 @@ function loadState() {
 
 let state = loadState();
 
+/* Selected day key for navigation */
+let selectedDayKey = nowDayKeyRollover0430();
+
 function saveState() {
   localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
@@ -128,6 +178,18 @@ function getDayLog(key) {
   return state.dayLogs[key];
 }
 
+function isValidMeal(meal) {
+  return MEALS.some(m => m.key === meal);
+}
+
+function normalizeEntryMeal(entry) {
+  // Backward compatibility: old entries had no meal -> default to snacks
+  const m = entry && entry.meal;
+  if (isValidMeal(m)) return m;
+  return "snacks";
+}
+
+/* ===== Calc ===== */
 function calcIngredientTotals(ing, amount) {
   let factor = 0;
   if (ing.unitType === "100g") factor = amount / 100;
@@ -159,7 +221,36 @@ function calcRecipeTotals(recipe) {
   return t;
 }
 
-/* DOM helpers */
+/* ===== Ratio coloring vs day average ===== */
+function ratioColor(value, avg) {
+  // White if equal. Green if cheaper (value < avg). Red if more expensive.
+  // We compute a smooth intensity based on relative difference, capped.
+  if (!Number.isFinite(value) || !Number.isFinite(avg) || avg <= 0) {
+    return "rgba(242,244,248,0.90)";
+  }
+
+  const diff = (value - avg) / avg; // negative => green, positive => red
+  const cap = 0.35;
+  const d = Math.max(-cap, Math.min(cap, diff));
+  const t = Math.abs(d) / cap; // 0..1
+
+  // base text is near-white
+  const base = { r: 242, g: 244, b: 248 };
+
+  // target green/red (not neon)
+  const green = { r: 140, g: 255, b: 180 };
+  const red = { r: 255, g: 140, b: 140 };
+
+  const target = (d < 0) ? green : (d > 0 ? red : base);
+
+  const r = Math.round(base.r + (target.r - base.r) * t);
+  const g = Math.round(base.g + (target.g - base.g) * t);
+  const b = Math.round(base.b + (target.b - base.b) * t);
+
+  return `rgb(${r},${g},${b})`;
+}
+
+/* ===== DOM helpers ===== */
 const $ = (sel) => document.querySelector(sel);
 
 /* Tabs */
@@ -207,19 +298,87 @@ function closeModal() {
   modalContent.innerHTML = "";
 }
 
-/* Export / Import */
+/* ===== Date navigation bar ===== */
+const btnPrevDay = $("#btnPrevDay");
+const btnNextDay = $("#btnNextDay");
+const dateLabel = $("#dateLabel");
+
+function getStoredDayKeysSorted() {
+  const keys = Object.keys(state.dayLogs || {});
+  keys.sort();
+  return keys;
+}
+
+function getOldestStoredDayKeyOrNull() {
+  const keys = getStoredDayKeysSorted().filter(k => {
+    const arr = state.dayLogs[k];
+    return Array.isArray(arr) && arr.length > 0;
+  });
+  if (keys.length === 0) return null;
+  return keys[0];
+}
+
+function updateDateBar() {
+  const todayKey = nowDayKeyRollover0430();
+  const oldest = getOldestStoredDayKeyOrNull();
+
+  // Label: Today -> "Heute", otherwise show date
+  dateLabel.textContent = (selectedDayKey === todayKey) ? "Heute" : formatDateKeyGerman(selectedDayKey);
+
+  // Can go forward only until today
+  btnNextDay.disabled = (selectedDayKey === todayKey);
+
+  // Can go back until oldest stored key (but allow empty days between)
+  if (!oldest) {
+    btnPrevDay.disabled = true;
+  } else {
+    btnPrevDay.disabled = (selectedDayKey <= oldest);
+  }
+}
+
+btnPrevDay.addEventListener("click", () => {
+  const oldest = getOldestStoredDayKeyOrNull();
+  if (!oldest) return;
+
+  const d = dateFromDayKey(selectedDayKey);
+  const prev = addDays(d, -1);
+  const prevKey = dayKeyFromDate(prev);
+
+  if (prevKey < oldest) return;
+
+  selectedDayKey = prevKey;
+  renderAll();
+});
+
+btnNextDay.addEventListener("click", () => {
+  const todayKey = nowDayKeyRollover0430();
+  if (selectedDayKey >= todayKey) return;
+
+  const d = dateFromDayKey(selectedDayKey);
+  const next = addDays(d, +1);
+  const nextKey = dayKeyFromDate(next);
+
+  if (nextKey > todayKey) return;
+
+  selectedDayKey = nextKey;
+  renderAll();
+});
+
+/* ===== Export / Import ===== */
 const btnExport = $("#btnExport");
 const btnImport = $("#btnImport");
 const importFile = $("#importFile");
 
 btnExport.addEventListener("click", () => {
-  const data = JSON.stringify(state, null, 2);
+  // Add optional schemaVersion, but keep structure identical so old importers still work
+  const payload = { ...state, schemaVersion: 2 };
+  const data = JSON.stringify(payload, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement("a");
   a.href = url;
-  a.download = `tracker-export-${todayKey()}.json`;
+  a.download = `tracker-export-${nowDayKeyRollover0430()}.json`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -245,8 +404,21 @@ importFile.addEventListener("change", async () => {
     if (!parsed.dayLogs || typeof parsed.dayLogs !== "object") throw new Error("Missing dayLogs");
     if (!parsed.goals || typeof parsed.goals !== "object") throw new Error("Missing goals");
 
+    // Backward compatible: ensure goals contain carbs/fat
+    const defaults = { kcal: 2500, protein: 160, price: 15, carbs: 300, fat: 80 };
+    parsed.goals.kcal = Number.isFinite(parsed.goals.kcal) ? parsed.goals.kcal : defaults.kcal;
+    parsed.goals.protein = Number.isFinite(parsed.goals.protein) ? parsed.goals.protein : defaults.protein;
+    parsed.goals.price = Number.isFinite(parsed.goals.price) ? parsed.goals.price : defaults.price;
+    parsed.goals.carbs = Number.isFinite(parsed.goals.carbs) ? parsed.goals.carbs : defaults.carbs;
+    parsed.goals.fat = Number.isFinite(parsed.goals.fat) ? parsed.goals.fat : defaults.fat;
+
     state = parsed;
     saveState();
+
+    // After import: keep selected day sensible
+    const todayKey = nowDayKeyRollover0430();
+    if (selectedDayKey > todayKey) selectedDayKey = todayKey;
+
     closeModal();
     renderAll();
     setTab("day");
@@ -255,7 +427,7 @@ importFile.addEventListener("change", async () => {
   }
 });
 
-/* Goals */
+/* ===== Goals ===== */
 const btnOpenGoals = $("#btnOpenGoals");
 
 btnOpenGoals.addEventListener("click", () => {
@@ -321,7 +493,7 @@ btnOpenGoals.addEventListener("click", () => {
       state.goals = { kcal, protein, price, carbs, fat };
       saveState();
       closeModal();
-      renderDay();
+      renderAll();
     });
   });
 });
@@ -346,7 +518,7 @@ if (recipesSearch) {
   });
 }
 
-/* Ingredients list (editor now in modal) */
+/* ===== Ingredients ===== */
 const ingredientsList = $("#ingredientsList");
 const ingredientsEmptyHint = $("#ingredientsEmptyHint");
 const btnNewIngredient = $("#btnNewIngredient");
@@ -523,11 +695,9 @@ function openIngredientEditorModal(id) {
           return;
         }
 
-        for (const dateKey of Object.keys(state.dayLogs)) {
-          state.dayLogs[dateKey] = (state.dayLogs[dateKey] || []).filter(e => !(e.type === "ingredient" && e.refId === target.id));
-        }
-
+        // We keep dayLogs entries as-is, but rendering ignores missing ingredient IDs.
         state.ingredients = state.ingredients.filter(x => x.id !== target.id);
+
         saveState();
         closeModal();
         renderAll();
@@ -536,7 +706,7 @@ function openIngredientEditorModal(id) {
   });
 }
 
-/* Recipes list (editor now in modal) */
+/* ===== Recipes ===== */
 const recipesList = $("#recipesList");
 const recipesEmptyHint = $("#recipesEmptyHint");
 const btnNewRecipe = $("#btnNewRecipe");
@@ -553,7 +723,6 @@ resetRecipeDraft();
 function openRecipeEditorModal(id, keepDraft = false) {
   editingRecipeId = id;
 
-  // If we come back from the ingredient picker, we MUST keep the current draft.
   if (!keepDraft) {
     if (id) {
       const r = state.recipes.find(x => x.id === id);
@@ -596,8 +765,8 @@ function openRecipeEditorModal(id, keepDraft = false) {
     nameEl.value = window.__recipeDraft.name || "";
 
     nameEl.addEventListener("input", () => {
-  window.__recipeDraft.name = nameEl.value;
-});
+      window.__recipeDraft.name = nameEl.value;
+    });
 
     const listEl = form.querySelector("#mRecipeIngredients");
     const hintEl = form.querySelector("#mRecipeIngredientsHint");
@@ -672,20 +841,17 @@ function openRecipeEditorModal(id, keepDraft = false) {
 
     const addBtn = form.querySelector("#mAddIngredientToRecipe");
     addBtn.addEventListener("click", () => {
-  if (state.ingredients.length === 0) {
-    alert("Du brauchst zuerst Zutaten.");
-    return;
-  }
+      if (state.ingredients.length === 0) {
+        alert("Du brauchst zuerst Zutaten.");
+        return;
+      }
 
-  // IMPORTANT: keep the currently typed name
-  window.__recipeDraft.name = nameEl.value;
+      window.__recipeDraft.name = nameEl.value;
 
-  openIngredientPickerForRecipe(() => {
-    // reopen the recipe modal with updated draft (do NOT reset draft)
-    openRecipeEditorModal(editingRecipeId, true);
-  });
-});
-
+      openIngredientPickerForRecipe(() => {
+        openRecipeEditorModal(editingRecipeId, true);
+      });
+    });
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -720,11 +886,9 @@ function openRecipeEditorModal(id, keepDraft = false) {
         const r = state.recipes.find(x => x.id === editingRecipeId);
         if (!r) return;
 
-        for (const dateKey of Object.keys(state.dayLogs)) {
-          state.dayLogs[dateKey] = (state.dayLogs[dateKey] || []).filter(e => !(e.type === "recipe" && e.refId === r.id));
-        }
-
+        // Keep dayLogs entries; rendering ignores missing recipe IDs.
         state.recipes = state.recipes.filter(x => x.id !== r.id);
+
         saveState();
         closeModal();
         renderAll();
@@ -806,12 +970,8 @@ function openIngredientPickerForRecipe(onDone) {
   });
 }
 
-/* Day logging */
-const btnAddIngredientToDay = $("#btnAddIngredientToDay");
-const btnAddRecipeToDay = $("#btnAddRecipeToDay");
-const btnClearDay = $("#btnClearDay");
-
-const dayEntries = $("#dayEntries");
+/* ===== Day UI: meal blocks overview + per-meal modal ===== */
+const mealBlocks = $("#mealBlocks");
 const dayEmptyHint = $("#dayEmptyHint");
 
 const dayKcalValue = $("#dayKcalValue");
@@ -825,38 +985,141 @@ const dayCarbsPct = $("#dayCarbsPct");
 const dayFatValue = $("#dayFatValue");
 const dayFatPct = $("#dayFatPct");
 
-btnAddIngredientToDay.addEventListener("click", () => {
-  if (state.ingredients.length === 0) {
-    alert("Du brauchst zuerst Zutaten.");
-    setTab("ingredients");
-    return;
-  }
-  openIngredientPickerForDay();
-});
+function openMealModal(mealKey) {
+  const meal = MEALS.find(m => m.key === mealKey);
+  const mealLabel = meal ? meal.label : "Einträge";
 
-btnAddRecipeToDay.addEventListener("click", () => {
-  if (state.recipes.length === 0) {
-    alert("Du brauchst zuerst ein Gericht.");
-    setTab("recipes");
-    return;
-  }
-  openRecipePickerForDay();
-});
+  const title = `${mealLabel} · ${selectedDayKey === nowDayKeyRollover0430() ? "Heute" : formatDateKeyGerman(selectedDayKey)}`;
 
-btnClearDay.addEventListener("click", () => {
-  const key = todayKey();
-  const log = state.dayLogs[key] || [];
-  if (log.length === 0) return;
+  openModal(title, (container) => {
+    const actions = document.createElement("div");
+    actions.className = "row wrap";
+    actions.innerHTML = `
+      <button class="btn btn--big" id="mAddIng">Zutat hinzufügen</button>
+      <button class="btn btn--big" id="mAddRec">Gericht hinzufügen</button>
+    `;
+    container.appendChild(actions);
 
-  const ok = confirm("Willst du wirklich alle Einträge von diesem Tag löschen?");
-  if (!ok) return;
+    const list = document.createElement("div");
+    list.className = "list";
+    container.appendChild(list);
 
-  state.dayLogs[key] = [];
-  saveState();
-  renderDay();
-});
+    const hint = document.createElement("div");
+    hint.className = "hint";
+    hint.textContent = "Noch keine Einträge.";
+    container.appendChild(hint);
 
-function openIngredientPickerForDay() {
+    function getVisibleEntriesForMeal() {
+      const log = getDayLog(selectedDayKey) || [];
+      return log.filter(e => normalizeEntryMeal(e) === mealKey);
+    }
+
+    function renderMealList() {
+      list.innerHTML = "";
+      const entries = getVisibleEntriesForMeal();
+
+      // filter missing IDs: do not show them
+      const visible = entries.filter(entry => {
+        if (entry.type === "ingredient") {
+          return state.ingredients.some(x => x.id === entry.refId);
+        }
+        return state.recipes.some(x => x.id === entry.refId);
+      });
+
+      hint.classList.toggle("hidden", visible.length > 0);
+
+      for (const entry of visible) {
+        let titleText = "";
+        let subText = "";
+        let price = 0;
+
+        if (entry.type === "ingredient") {
+          const ing = state.ingredients.find(x => x.id === entry.refId);
+          if (!ing) continue;
+
+          const a = calcIngredientTotals(ing, entry.amount);
+          price = a.price;
+
+          titleText = ing.name;
+          subText = `${amountLabel(ing.unitType, entry.amount)} · ${lineFull(a.price, a.kcal, a.protein, a.carbs, a.fat)}`;
+        } else {
+          const r = state.recipes.find(x => x.id === entry.refId);
+          if (!r) continue;
+
+          const t = calcRecipeTotals(r);
+          const f = entry.amount;
+
+          price = t.price * f;
+
+          titleText = r.name;
+          subText = `Faktor ${f} · ${lineFull(price, t.kcal * f, t.protein * f, t.carbs * f, t.fat * f)}`;
+        }
+
+        const row = document.createElement("div");
+        row.className = "item";
+        row.style.cursor = "default";
+
+        row.innerHTML = `
+          <div class="item__top">
+            <div>
+              <div class="item__title">${escapeHtml(titleText)}</div>
+              <div class="item__sub">${escapeHtml(subText)}</div>
+            </div>
+            <div class="item__right">${escapeHtml(euro(price))}</div>
+          </div>
+        `;
+
+        const btnDel = document.createElement("button");
+        btnDel.className = "btn btn--danger";
+        btnDel.type = "button";
+        btnDel.textContent = "Löschen";
+        btnDel.addEventListener("click", () => {
+          const log = getDayLog(selectedDayKey);
+          state.dayLogs[selectedDayKey] = (log || []).filter(e => e.id !== entry.id);
+          saveState();
+          renderAll();
+          renderMealList();
+        });
+
+        row.appendChild(btnDel);
+        list.appendChild(row);
+      }
+    }
+
+    renderMealList();
+
+    const btnIng = actions.querySelector("#mAddIng");
+    const btnRec = actions.querySelector("#mAddRec");
+
+    btnIng.addEventListener("click", () => {
+      if (state.ingredients.length === 0) {
+        alert("Du brauchst zuerst Zutaten.");
+        setTab("ingredients");
+        closeModal();
+        return;
+      }
+      openIngredientPickerForDay(mealKey, () => {
+        renderAll();
+        renderMealList();
+      });
+    });
+
+    btnRec.addEventListener("click", () => {
+      if (state.recipes.length === 0) {
+        alert("Du brauchst zuerst ein Gericht.");
+        setTab("recipes");
+        closeModal();
+        return;
+      }
+      openRecipePickerForDay(mealKey, () => {
+        renderAll();
+        renderMealList();
+      });
+    });
+  });
+}
+
+function openIngredientPickerForDay(mealKey, onDone) {
   openModal("Zutat hinzufügen", (container) => {
     const search = document.createElement("input");
     search.className = "searchInput";
@@ -907,11 +1170,18 @@ function openIngredientPickerForDay() {
             alert("Menge muss > 0 sein.");
             return;
           }
-          const key = todayKey();
-          getDayLog(key).push({ id: uid(), type: "ingredient", refId: ing.id, amount: n });
+
+          getDayLog(selectedDayKey).push({
+            id: uid(),
+            type: "ingredient",
+            refId: ing.id,
+            amount: n,
+            meal: mealKey
+          });
+
           saveState();
           closeModal();
-          renderDay();
+          if (typeof onDone === "function") onDone();
         });
         row.appendChild(btn);
 
@@ -931,7 +1201,7 @@ function openIngredientPickerForDay() {
   });
 }
 
-function openRecipePickerForDay() {
+function openRecipePickerForDay(mealKey, onDone) {
   openModal("Gericht hinzufügen", (container) => {
     const search = document.createElement("input");
     search.className = "searchInput";
@@ -963,7 +1233,7 @@ function openRecipePickerForDay() {
               <strong>${escapeHtml(r.name)}</strong>
               <div class="item__sub">${escapeHtml(lineFull(t.price, t.kcal, t.protein, t.carbs, t.fat))}</div>
             </div>
-            <div class="item__right">${euro(t.price)}</div>
+            <div class="item__right">${escapeHtml(euro(t.price))}</div>
           </div>
         `;
 
@@ -983,11 +1253,18 @@ function openRecipePickerForDay() {
             alert("Faktor muss > 0 sein.");
             return;
           }
-          const key = todayKey();
-          getDayLog(key).push({ id: uid(), type: "recipe", refId: r.id, amount: n });
+
+          getDayLog(selectedDayKey).push({
+            id: uid(),
+            type: "recipe",
+            refId: r.id,
+            amount: n,
+            meal: mealKey
+          });
+
           saveState();
           closeModal();
-          renderDay();
+          if (typeof onDone === "function") onDone();
         });
         row.appendChild(btn);
 
@@ -1007,121 +1284,195 @@ function openRecipePickerForDay() {
   });
 }
 
-/* Rendering */
+/* ===== Rendering ===== */
 function renderAll() {
+  // If time has moved to a new rollover day and selected is "today", keep it synced.
+  const todayKey = nowDayKeyRollover0430();
+  if (selectedDayKey === todayKeyFromLastRender && todayKey !== todayKeyFromLastRender) {
+    selectedDayKey = todayKey;
+  }
+
   renderDay();
   renderIngredients();
   renderRecipes();
+  updateDateBar();
+
+  todayKeyFromLastRender = todayKey;
+}
+
+let todayKeyFromLastRender = nowDayKeyRollover0430();
+
+function getVisibleDayEntries(key) {
+  const log = getDayLog(key) || [];
+
+  // Skip entries whose refId no longer exists
+  return log.filter(entry => {
+    if (entry.type === "ingredient") {
+      return state.ingredients.some(x => x.id === entry.refId);
+    }
+    return state.recipes.some(x => x.id === entry.refId);
+  });
+}
+
+function calcTotalsForEntries(entries) {
+  let totals = { kcal: 0, protein: 0, carbs: 0, fat: 0, price: 0 };
+
+  for (const entry of entries) {
+    if (entry.type === "ingredient") {
+      const ing = state.ingredients.find(x => x.id === entry.refId);
+      if (!ing) continue;
+      const a = calcIngredientTotals(ing, entry.amount);
+      totals.kcal += a.kcal;
+      totals.protein += a.protein;
+      totals.carbs += a.carbs;
+      totals.fat += a.fat;
+      totals.price += a.price;
+    } else {
+      const r = state.recipes.find(x => x.id === entry.refId);
+      if (!r) continue;
+      const t = calcRecipeTotals(r);
+      totals.kcal += t.kcal * entry.amount;
+      totals.protein += t.protein * entry.amount;
+      totals.carbs += t.carbs * entry.amount;
+      totals.fat += t.fat * entry.amount;
+      totals.price += t.price * entry.amount;
+    }
+  }
+
+  return totals;
+}
+
+function pctOfGoal(value, goal) {
+  if (!Number.isFinite(value) || !Number.isFinite(goal) || goal <= 0) return 0;
+  return clampPct(Math.round((value / goal) * 100));
+}
+
+function eurosPer100gProtein(totals) {
+  if (!totals || totals.protein <= 0) return NaN;
+  return (totals.price / totals.protein) * 100;
+}
+
+function eurosPer100kcal(totals) {
+  if (!totals || totals.kcal <= 0) return NaN;
+  return (totals.price / totals.kcal) * 100;
 }
 
 function renderDay() {
-  const key = todayKey();
-  const log = getDayLog(key);
+  const visibleEntries = getVisibleDayEntries(selectedDayKey);
 
-  let totals = { kcal: 0, protein: 0, carbs: 0, fat: 0, price: 0 };
+  // Day totals
+  const dayTotals = calcTotalsForEntries(visibleEntries);
 
-  dayEntries.innerHTML = "";
-  if (!log || log.length === 0) dayEmptyHint.classList.remove("hidden");
-  else dayEmptyHint.classList.add("hidden");
+  // Day headline metrics
+  dayKcalValue.textContent = String(Math.round(dayTotals.kcal));
+  dayKcalPct.textContent = `${pctOfGoal(dayTotals.kcal, state.goals.kcal)}%`;
 
-  for (const entry of (log || [])) {
-    let title = "";
-    let sub = "";
+  dayProteinValue.textContent = `${round1(dayTotals.protein).replace(".", ",")}`;
+  dayProteinPct.textContent = `${pctOfGoal(dayTotals.protein, state.goals.protein)}%`;
 
-    let kcal = 0;
-    let protein = 0;
-    let carbs = 0;
-    let fat = 0;
-    let price = 0;
+  dayPriceValue.textContent = euroPlain(dayTotals.price);
+  dayPricePct.textContent = `${pctOfGoal(dayTotals.price, state.goals.price)}%`;
 
-    if (entry.type === "ingredient") {
-      const ing = state.ingredients.find(x => x.id === entry.refId);
-      if (ing) {
-        const a = calcIngredientTotals(ing, entry.amount);
-        kcal = a.kcal;
-        protein = a.protein;
-        carbs = a.carbs;
-        fat = a.fat;
-        price = a.price;
+  dayCarbsValue.textContent = `${round1(dayTotals.carbs).replace(".", ",")}`;
+  dayCarbsPct.textContent = `${pctOfGoal(dayTotals.carbs, state.goals.carbs)}%`;
 
-        title = ing.name;
-        sub = `${amountLabel(ing.unitType, entry.amount)} · ${lineFull(price, kcal, protein, carbs, fat)}`;
-      } else {
-        title = "Unbekannte Zutat";
-        sub = "Nicht gefunden";
-      }
-    } else {
-      const r = state.recipes.find(x => x.id === entry.refId);
-      if (r) {
-        const t = calcRecipeTotals(r);
-        kcal = t.kcal * entry.amount;
-        protein = t.protein * entry.amount;
-        carbs = t.carbs * entry.amount;
-        fat = t.fat * entry.amount;
-        price = t.price * entry.amount;
+  dayFatValue.textContent = `${round1(dayTotals.fat).replace(".", ",")}`;
+  dayFatPct.textContent = `${pctOfGoal(dayTotals.fat, state.goals.fat)}%`;
 
-        title = r.name;
-        sub = `Faktor ${entry.amount} · ${lineFull(price, kcal, protein, carbs, fat)}`;
-      } else {
-        title = "Unbekanntes Gericht";
-        sub = "Nicht gefunden";
-      }
-    }
+  // Empty hint
+  const hasAny = visibleEntries.length > 0;
+  dayEmptyHint.classList.toggle("hidden", hasAny);
 
-    totals.kcal += kcal;
-    totals.protein += protein;
-    totals.carbs += carbs;
-    totals.fat += fat;
-    totals.price += price;
+  // Day average ratios for coloring comparisons
+  const dayAvgP100prot = eurosPer100gProtein(dayTotals);
+  const dayAvgP100kcal = eurosPer100kcal(dayTotals);
 
-    const row = document.createElement("div");
-    row.className = "item";
-    row.style.cursor = "default";
+  // Render meal blocks overview
+  mealBlocks.innerHTML = "";
 
-    row.innerHTML = `
-      <div class="item__top">
-        <div>
-          <div class="item__title">${escapeHtml(title)}</div>
-          <div class="item__sub">${escapeHtml(sub)}</div>
+  for (const meal of MEALS) {
+    const mealEntries = visibleEntries.filter(e => normalizeEntryMeal(e) === meal.key);
+    const t = calcTotalsForEntries(mealEntries);
+
+    const p100prot = eurosPer100gProtein(t);
+    const p100kcal = eurosPer100kcal(t);
+
+    const block = document.createElement("div");
+    block.className = "mealBlock";
+    block.addEventListener("click", () => openMealModal(meal.key));
+
+    const priceText = euroPlain(t.price);
+
+    const kcalText = `${Math.round(t.kcal)}`;
+    const protText = `${round1(t.protein).replace(".", ",")}`;
+    const carbsText = `${round1(t.carbs).replace(".", ",")}`;
+    const fatText = `${round1(t.fat).replace(".", ",")}`;
+
+    const kcalPct = `${pctOfGoal(t.kcal, state.goals.kcal)}%`;
+    const protPct = `${pctOfGoal(t.protein, state.goals.protein)}%`;
+    const carbsPct = `${pctOfGoal(t.carbs, state.goals.carbs)}%`;
+    const fatPct = `${pctOfGoal(t.fat, state.goals.fat)}%`;
+    const pricePct = `${pctOfGoal(t.price, state.goals.price)}%`;
+
+    const p100protText = Number.isFinite(p100prot) ? euroPlain(p100prot) : "n/a";
+    const p100kcalText = Number.isFinite(p100kcal) ? euroPlain(p100kcal) : "n/a";
+
+    const protColor = ratioColor(p100prot, dayAvgP100prot);
+    const kcalColor = ratioColor(p100kcal, dayAvgP100kcal);
+
+    block.innerHTML = `
+      <div class="mealTop">
+        <div class="mealTitle">${escapeHtml(meal.label)}</div>
+        <div class="mealPrice">${escapeHtml(priceText)} €</div>
+      </div>
+
+      <div class="mealGrid">
+        <div class="mealLine">
+          <div class="mealLineLabel">kcal</div>
+          <div class="mealLineValue">${escapeHtml(kcalText)}</div>
+          <div class="mealLinePct">${escapeHtml(kcalPct)}</div>
+        </div>
+
+        <div class="mealLine">
+          <div class="mealLineLabel">Protein (g)</div>
+          <div class="mealLineValue">${escapeHtml(protText)}</div>
+          <div class="mealLinePct">${escapeHtml(protPct)}</div>
+        </div>
+
+        <div class="mealLine">
+          <div class="mealLineLabel">Kohlenhydrate (g)</div>
+          <div class="mealLineValue">${escapeHtml(carbsText)}</div>
+          <div class="mealLinePct">${escapeHtml(carbsPct)}</div>
+        </div>
+
+        <div class="mealLine">
+          <div class="mealLineLabel">Fett (g)</div>
+          <div class="mealLineValue">${escapeHtml(fatText)}</div>
+          <div class="mealLinePct">${escapeHtml(fatPct)}</div>
+        </div>
+      </div>
+
+      <div class="mealRatios">
+        <div class="mealRatioRow">
+          <div class="mealRatioLabel">€ / 100 g Protein</div>
+          <div class="mealRatioValue" style="color:${escapeHtml(protColor)}">${escapeHtml(p100protText)}</div>
+        </div>
+        <div class="mealRatioRow">
+          <div class="mealRatioLabel">€ / 100 kcal</div>
+          <div class="mealRatioValue" style="color:${escapeHtml(kcalColor)}">${escapeHtml(p100kcalText)}</div>
+        </div>
+        <div class="mealRatioRow">
+          <div class="mealRatioLabel">Preis % Tagesziel</div>
+          <div class="mealRatioValue">${escapeHtml(pricePct)}</div>
         </div>
       </div>
     `;
 
-    const actions = document.createElement("div");
-    actions.className = "row";
-    actions.style.marginTop = "8px";
-
-    const btnDel = document.createElement("button");
-    btnDel.className = "btn btn--danger";
-    btnDel.type = "button";
-    btnDel.textContent = "Löschen";
-    btnDel.addEventListener("click", () => {
-      state.dayLogs[key] = (state.dayLogs[key] || []).filter(e => e.id !== entry.id);
-      saveState();
-      renderDay();
-    });
-
-    actions.appendChild(btnDel);
-    row.appendChild(actions);
-    dayEntries.appendChild(row);
+    mealBlocks.appendChild(block);
   }
-
-  dayKcalValue.textContent = String(Math.round(totals.kcal));
-  dayKcalPct.textContent = `${clampPct(Math.round((totals.kcal / state.goals.kcal) * 100))}%`;
-
-  dayProteinValue.textContent = `${round1(totals.protein).replace(".", ",")}`;
-  dayProteinPct.textContent = `${clampPct(Math.round((totals.protein / state.goals.protein) * 100))}%`;
-
-  dayPriceValue.textContent = `${round2(totals.price)}`.replace(".", ",");
-  dayPricePct.textContent = `${clampPct(Math.round((totals.price / state.goals.price) * 100))}%`;
-
-  dayCarbsValue.textContent = `${round1(totals.carbs).replace(".", ",")}`;
-  dayCarbsPct.textContent = `${clampPct(Math.round((totals.carbs / state.goals.carbs) * 100))}%`;
-
-  dayFatValue.textContent = `${round1(totals.fat).replace(".", ",")}`;
-  dayFatPct.textContent = `${clampPct(Math.round((totals.fat / state.goals.fat) * 100))}%`;
 }
 
+/* ===== Ingredients tab render ===== */
 function renderIngredients() {
   ingredientsList.innerHTML = "";
 
@@ -1160,6 +1511,7 @@ function renderIngredients() {
   }
 }
 
+/* ===== Recipes tab render ===== */
 function renderRecipes() {
   recipesList.innerHTML = "";
 
@@ -1187,7 +1539,7 @@ function renderRecipes() {
           <div class="item__title">${escapeHtml(r.name)}</div>
           <div class="item__sub">${r.items.length} Zutaten</div>
         </div>
-        <div class="item__right">${euro(t.price)}</div>
+        <div class="item__right">${escapeHtml(euro(t.price))}</div>
       </div>
       <div class="item__sub">${escapeHtml(lineFull(t.price, t.kcal, t.protein, t.carbs, t.fat))}</div>
     `;
@@ -1196,6 +1548,6 @@ function renderRecipes() {
   }
 }
 
-/* Initial */
+/* ===== Initial ===== */
 renderAll();
 setTab("day");

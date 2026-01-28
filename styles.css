@@ -4,11 +4,11 @@
   --text: #f2f4f8;
   --muted: #aab0c0;
   --line: rgba(255,255,255,0.10);
-  --accent: #89c7ff; /* baby blue */
+  --accent: #89c7ff;
   --danger: #ff6b6b;
-  --ui-scale: 1;          /* default desktop */
-  --ui-scale-phone: 1.6;  /* your requested phone scale */
 
+  --ui-scale: 1;
+  --ui-scale-phone: 1.6;
 }
 
 *{ box-sizing: border-box; }
@@ -19,21 +19,17 @@ body{
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-
-
-  /* “App feeling” */
   min-height: 100dvh;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Leave room for date bar + tabs */
 .content{
-  /* Fill screen and leave space for bottom tabs */
   min-height: 100dvh;
-  padding: max(14px, env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom)) 14px;
+  padding: max(14px, env(safe-area-inset-top)) 14px calc(140px + env(safe-area-inset-bottom)) 14px;
   width: 100%;
   max-width: 980px;
   margin: 0 auto;
@@ -47,9 +43,7 @@ body{
   margin: 12px 0;
 }
 
-.card--hero{
-  padding: 16px;
-}
+.card--hero{ padding: 16px; }
 
 .h2{ font-weight: 950; font-size: 18px; letter-spacing: -0.2px; }
 .h3{ font-weight: 900; font-size: 15px; color: var(--muted); }
@@ -57,19 +51,9 @@ body{
 .row{ display: flex; gap: 10px; align-items: center; }
 .row--space{ justify-content: space-between; }
 .row--top{ align-items: flex-start; }
+.row--stackMobile{ align-items: flex-start; }
 .wrap{ flex-wrap: wrap; }
 
-.row--stackMobile{
-  align-items: flex-start;
-}
-
-.sideActions{
-  display: flex;
-  align-items: flex-start;
-  justify-content: flex-end;
-}
-
-/* Big top metrics */
 .metrics3{
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -118,16 +102,10 @@ body{
   padding: 12px 12px;
   min-height: 78px;
 }
+
 .miniMetric__label{ color: var(--muted); font-size: 13px; font-weight: 800; }
 .miniMetric__value{ font-size: 18px; font-weight: 980; margin-top: 10px; letter-spacing: -0.2px; }
-
-.miniMetric__sub{
-  color: var(--muted);
-  margin-top: 8px;
-  font-size: 14px;
-  font-weight: 800;
-}
-
+.miniMetric__sub{ color: var(--muted); margin-top: 8px; font-size: 14px; font-weight: 800; }
 
 .miniData{
   border: 1px solid var(--line);
@@ -137,13 +115,9 @@ body{
   gap: 10px;
   min-height: 78px;
 }
-.miniData__buttons{
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+.miniData__buttons{ display: flex; gap: 10px; flex-wrap: wrap; }
 
-/* Buttons: much larger */
+/* Buttons */
 .btn{
   background: var(--accent);
   border: none;
@@ -183,19 +157,11 @@ body{
 }
 
 /* Forms */
-.field{
-  display: grid;
-  gap: 8px;
-  margin: 12px 0;
-}
+.field{ display: grid; gap: 8px; margin: 12px 0; }
+.field span{ color: var(--muted); font-size: 14px; font-weight: 800; }
 
-.field span{
-  color: var(--muted);
-  font-size: 14px;
-  font-weight: 800;
-}
-
-.field input{
+.field input,
+.searchInput{
   background: rgba(255,255,255,0.04);
   border: 1px solid var(--line);
   color: var(--text);
@@ -224,29 +190,18 @@ body{
   background-position:
     calc(100% - 22px) 50%,
     calc(100% - 14px) 50%;
-  background-size:
-    8px 8px,
-    8px 8px;
+  background-size: 8px 8px, 8px 8px;
   background-repeat: no-repeat;
 }
 
-.field input:focus, .field select:focus{
+.field input:focus, .field select:focus, .searchInput:focus{
   border-color: rgba(137,199,255,0.55);
 }
 
-.grid2{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
+.grid2{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-.list{
-  display: grid;
-  gap: 10px;
-  margin-top: 12px;
-}
+.list{ display: grid; gap: 10px; margin-top: 12px; }
 
-/* List items: bigger tap targets */
 .item{
   border: 1px solid var(--line);
   border-radius: 16px;
@@ -263,10 +218,7 @@ body{
   align-items: baseline;
 }
 
-.item__title{
-  font-weight: 980;
-  font-size: 16px;
-}
+.item__title{ font-weight: 980; font-size: 16px; }
 
 .item__sub{
   color: var(--muted);
@@ -282,18 +234,9 @@ body{
   font-weight: 800;
 }
 
-.hint{
-  color: var(--muted);
-  font-size: 14px;
-  margin-top: 10px;
-  font-weight: 700;
-}
+.hint{ color: var(--muted); font-size: 14px; margin-top: 10px; font-weight: 700; }
 
-.divider{
-  height: 1px;
-  background: var(--line);
-  margin: 14px 0;
-}
+.divider{ height: 1px; background: var(--line); margin: 14px 0; }
 
 .summaryBox{
   color: var(--muted);
@@ -303,39 +246,103 @@ body{
   font-weight: 700;
 }
 
-/* Bottom tabs: bigger, full width */
-.tabs{
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) 12px;
-  background: rgba(14,15,18,0.96);
-  border-top: 1px solid var(--line);
+.hidden{ display: none !important; }
+
+/* ===== Meals overview blocks ===== */
+.mealBlocks{
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-  z-index: 20;
+  gap: 12px;
+  margin-top: 12px;
 }
 
-.tabBtn{
-  background: transparent;
+.mealBlock{
   border: 1px solid var(--line);
-  color: var(--muted);
   border-radius: 18px;
-  padding: 14px 10px;
+  padding: 14px;
   cursor: pointer;
+  display: grid;
+  gap: 10px;
+}
+
+.mealTop{
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.mealTitle{
   font-weight: 980;
-  min-height: 56px;
-  font-size: 16px;
+  font-size: 20px;
+  letter-spacing: -0.2px;
 }
 
-.tabBtn--active{
-  color: var(--text);
-  border-color: rgba(137,199,255,0.60);
+.mealPrice{
+  font-weight: 980;
+  font-size: 22px;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
 }
 
-/* Modal */
+.mealGrid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mealLine{
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+}
+
+.mealLineLabel{
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.mealLineValue{
+  font-weight: 980;
+  font-size: 18px;
+}
+
+.mealLinePct{
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.mealRatios{
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 8px;
+}
+
+.mealRatioRow{
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.mealRatioLabel{
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.mealRatioValue{
+  font-weight: 980;
+  font-size: 18px;
+  letter-spacing: -0.2px;
+}
+
+/* ===== Modal ===== */
 .modal{
   position: fixed;
   inset: 0;
@@ -371,24 +378,76 @@ body{
   cursor: default;
 }
 
-.searchInput{
-  background: rgba(255,255,255,0.04);
+/* ===== bottom area with date bar + tabs ===== */
+.bottomArea{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+}
+
+.dateBar{
+  background: rgba(14,15,18,0.96);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 8px 12px;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 10px;
+}
+
+.dateNavBtn{
+  height: 40px;
+  border-radius: 14px;
   border: 1px solid var(--line);
+  background: transparent;
   color: var(--text);
-  border-radius: 16px;
-  padding: 14px 14px;
-  outline: none;
-  min-height: 54px;
+  cursor: pointer;
+  font-weight: 980;
+  font-size: 18px;
+}
+
+.dateNavBtn:disabled{
+  opacity: 0.35;
+  cursor: default;
+}
+
+.dateLabel{
+  text-align: center;
+  font-weight: 980;
+  letter-spacing: -0.2px;
+  color: var(--text);
+}
+
+.tabs{
+  background: rgba(14,15,18,0.96);
+  border-top: 1px solid var(--line);
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.tabBtn{
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 18px;
+  padding: 14px 10px;
+  cursor: pointer;
+  font-weight: 980;
+  min-height: 56px;
   font-size: 16px;
 }
 
-.searchInput:focus{
-  border-color: rgba(137,199,255,0.55);
+.tabBtn--active{
+  color: var(--text);
+  border-color: rgba(137,199,255,0.60);
 }
 
-.hidden{ display: none !important; }
-
-/* Smartphone: use space even better */
+/* ===== Mobile layout ===== */
 @media (max-width: 520px){
   .content{
     padding-left: 12px;
@@ -402,7 +461,7 @@ body{
   }
 
   .metrics3{
-    grid-template-columns: 1fr; /* one big tile per row */
+    grid-template-columns: 1fr;
     gap: 12px;
   }
 
@@ -412,11 +471,11 @@ body{
   }
 
   .metric__value{
-    font-size: clamp(44px, 12vw, 70px); /* huge numbers */
+    font-size: clamp(44px, 12vw, 70px);
   }
 
   .miniRow{
-    grid-template-columns: 1fr; /* stack mini cards */
+    grid-template-columns: 1fr;
   }
 
   .miniMetric, .miniData{
@@ -425,20 +484,9 @@ body{
     border-radius: 18px;
   }
 
-  .grid2{
-    grid-template-columns: 1fr;
-  }
+  .grid2{ grid-template-columns: 1fr; }
 
-  .btn{
-    width: 100%; /* app-like full width buttons */
-  }
-
-  .actionsRow{
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-    width: 100%;
-  }
+  .btn{ width: 100%; }
 
   .tabs{
     padding-left: 10px;
@@ -446,89 +494,42 @@ body{
   }
 }
 
-/* ===== PHONE (Android/iPhone): one single source of truth ===== */
+/* ===== PHONE scaling ===== */
 @media (pointer: coarse) {
-  :root{
-    --ui-scale: var(--ui-scale-phone); /* 1.6 */
-  }
+  :root{ --ui-scale: var(--ui-scale-phone); }
 
-  /* Use full width */
-  .content{
-    max-width: none;
-    margin: 0;
-  }
+  .content{ max-width: none; margin: 0; }
 
-    .modalRow strong{
-    font-size: calc(26px * var(--ui-scale));
-    font-weight: 980;
-  }
-
-  .modalRow .item__sub{
-    font-size: calc(16px * var(--ui-scale));
-    font-weight: 700;
-  }
-
-
-  /* Cards spacing */
   .card{
     padding: calc(16px * var(--ui-scale));
     border-radius: calc(20px * var(--ui-scale));
     margin: calc(14px * var(--ui-scale)) 0;
   }
 
-  /* Headings */
   .h2{ font-size: calc(22px * var(--ui-scale)); }
   .h3{ font-size: calc(16px * var(--ui-scale)); }
 
-  /* ===== TOP METRICS: make them MUCH bigger ===== */
   .metric{
     padding: calc(18px * var(--ui-scale));
     border-radius: calc(18px * var(--ui-scale));
     min-height: calc(140px * var(--ui-scale));
   }
 
-  .metric__label{
-    font-size: calc(18px * var(--ui-scale));
-    font-weight: 900;
-  }
+  .metric__label{ font-size: calc(18px * var(--ui-scale)); font-weight: 900; }
+  .metric__value{ font-size: clamp(45px, 10vw, 63px); margin-top: calc(10px * var(--ui-scale)); }
+  .metric__sub{ font-size: calc(18px * var(--ui-scale)); margin-top: calc(10px * var(--ui-scale)); }
 
-  .metric__value{
-    font-size: clamp(45px, 10vw, 63px); /* clearly bigger */
-    margin-top: calc(10px * var(--ui-scale));
-  }
+  .miniMetric__label{ font-size: calc(14px * var(--ui-scale)); }
+  .miniMetric__value{ font-size: calc(28px * var(--ui-scale)); }
+  .miniMetric__sub{ font-size: calc(18px * var(--ui-scale)); margin-top: calc(10px * var(--ui-scale)); }
 
-  .metric__sub{
-    font-size: calc(18px * var(--ui-scale));
-    margin-top: calc(10px * var(--ui-scale));
-  }
-
-  /* ===== MINI CARDS: only numbers bigger ===== */
-  .miniMetric__label{
-    font-size: calc(14px * var(--ui-scale));
-  }
-  .miniMetric__value{
-    font-size: calc(28px * var(--ui-scale));
-  }
-
-    .miniMetric__sub{
-    font-size: calc(18px * var(--ui-scale));
-    font-weight: 800;
-    margin-top: calc(10px * var(--ui-scale));
-  }
-
-
-  /* Data box */
-  .miniData .miniMetric__label{
-    font-size: calc(14px * var(--ui-scale));
-  }
-
-  /* Buttons */
   .btn{
     min-height: calc(60px * var(--ui-scale));
     font-size: calc(18px * var(--ui-scale));
     padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale));
     border-radius: calc(18px * var(--ui-scale));
   }
+
   .btn--tiny{
     min-height: calc(48px * var(--ui-scale));
     font-size: calc(16px * var(--ui-scale));
@@ -536,33 +537,36 @@ body{
     border-radius: calc(16px * var(--ui-scale));
   }
 
-  /* List */
   .item{
     padding: calc(18px * var(--ui-scale));
     border-radius: calc(18px * var(--ui-scale));
     gap: calc(10px * var(--ui-scale));
   }
-  .item__title{
-    font-size: calc(18px * var(--ui-scale));
-  }
-  .item__sub, .item__right{
-    font-size: calc(16px * var(--ui-scale));
-  }
+  .item__title{ font-size: calc(18px * var(--ui-scale)); }
+  .item__sub, .item__right{ font-size: calc(16px * var(--ui-scale)); }
 
-  /* Inputs */
-  .field span{
-    font-size: calc(16px * var(--ui-scale));
-  }
-  .field input,
-  .field select,
-  .searchInput{
+  .field span{ font-size: calc(16px * var(--ui-scale)); }
+  .field input, .field select, .searchInput{
     min-height: calc(60px * var(--ui-scale));
     font-size: calc(18px * var(--ui-scale));
     padding: calc(16px * var(--ui-scale));
     border-radius: calc(18px * var(--ui-scale));
   }
 
-  /* Bottom tabs */
+  .dateBar{
+    padding: calc(10px * var(--ui-scale)) calc(12px * var(--ui-scale));
+  }
+
+  .dateNavBtn{
+    height: calc(44px * var(--ui-scale));
+    border-radius: calc(16px * var(--ui-scale));
+    font-size: calc(20px * var(--ui-scale));
+  }
+
+  .dateLabel{
+    font-size: calc(18px * var(--ui-scale));
+  }
+
   .tabs{
     gap: calc(12px * var(--ui-scale));
     padding: calc(12px * var(--ui-scale)) calc(12px * var(--ui-scale))
@@ -577,64 +581,8 @@ body{
     border-radius: calc(22px * var(--ui-scale));
   }
 
-  /* Modal */
-  .modal__sheet{
-    padding: calc(16px * var(--ui-scale));
-    border-radius: calc(22px * var(--ui-scale)) calc(22px * var(--ui-scale)) 0 0;
-  }
-  .modalRow{
-    padding: calc(14px * var(--ui-scale));
-    border-radius: calc(18px * var(--ui-scale));
-    gap: calc(12px * var(--ui-scale));
-  }
-
-  .hint, .summaryBox{
-    font-size: calc(16px * var(--ui-scale));
-  }
-}
-
-
-@media (max-width: 520px){
-  .sideActions{
-    width: 100%;
-    justify-content: stretch;
-  }
-  .sideActions .btn{
-    width: 100%;
-  }
-}
-
-/* ===== MODAL PICKER: große, dominante Überschrift ===== */
-
-/* Linke Text-Spalte im Modal NICHT mehr flex-begrenzt */
-.modal .modalRow .row > div:first-child{
-  display: block;
-}
-
-/* TITEL (Zutat / Gericht) */
-.modal .modalRow strong{
-  display: block;
-  font-size: 34px;
-  font-weight: 980;
-  line-height: 1.15;
-  letter-spacing: -0.4px;
-  margin-bottom: 6px;
-}
-
-/* UNTERTEXT (Marke / Details) */
-.modal .modalRow .item__sub{
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-/* Mobile: NOCH größer */
-@media (pointer: coarse){
-  .modal .modalRow strong{
-    font-size: 38px;
-  }
-
-  .modal .modalRow .item__sub{
-    font-size: 22px;
-  }
+  .mealTitle{ font-size: calc(22px * var(--ui-scale)); }
+  .mealPrice{ font-size: calc(24px * var(--ui-scale)); }
+  .mealLineValue{ font-size: calc(20px * var(--ui-scale)); }
+  .mealRatioValue{ font-size: calc(20px * var(--ui-scale)); }
 }

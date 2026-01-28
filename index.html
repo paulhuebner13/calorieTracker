@@ -11,17 +11,14 @@
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
-  <!-- Optional, aber gut -->
-  <meta name="theme-color" content="#0e0f12">
-  
   <title>Calorie Tracker</title>
   <link rel="stylesheet" href="styles.css" />
-
   <link rel="manifest" href="manifest.webmanifest">
-
 </head>
+
 <body>
   <main class="content">
+
     <!-- DAY TAB -->
     <section class="tab" id="tab-day" data-tab="day">
       <div class="card card--hero">
@@ -34,57 +31,51 @@
             </div>
             <div class="metric metric--protein">
               <div class="metric__label">Protein (g)</div>
-              <div class="metric__value" id="dayProteinValue">0 g</div>
+              <div class="metric__value" id="dayProteinValue">0</div>
               <div class="metric__sub" id="dayProteinPct">0%</div>
             </div>
             <div class="metric metric--price">
               <div class="metric__label">Preis (€)</div>
-              <div class="metric__value" id="dayPriceValue">€ 0,00</div>
+              <div class="metric__value" id="dayPriceValue">0,00</div>
               <div class="metric__sub" id="dayPricePct">0%</div>
             </div>
           </div>
-
-          <div class="sideActions">
-            <button class="btn btn--ghost btn--big" id="btnOpenGoals">Ziele</button>
-          </div>
         </div>
 
+        <!-- mini row: carbs/fat/data + goals moved here -->
         <div class="miniRow">
           <div class="miniMetric">
-  <div class="miniMetric__label">Kohlenhydrate (g)</div>
-  <div class="miniMetric__value" id="dayCarbsValue">0,0</div>
-  <div class="miniMetric__sub" id="dayCarbsPct">0%</div>
-</div>
-<div class="miniMetric">
-  <div class="miniMetric__label">Fett (g)</div>
-  <div class="miniMetric__value" id="dayFatValue">0,0</div>
-  <div class="miniMetric__sub" id="dayFatPct">0%</div>
-</div>
+            <div class="miniMetric__label">Kohlenhydrate (g)</div>
+            <div class="miniMetric__value" id="dayCarbsValue">0,0</div>
+            <div class="miniMetric__sub" id="dayCarbsPct">0%</div>
+          </div>
 
+          <div class="miniMetric">
+            <div class="miniMetric__label">Fett (g)</div>
+            <div class="miniMetric__value" id="dayFatValue">0,0</div>
+            <div class="miniMetric__sub" id="dayFatPct">0%</div>
+          </div>
 
           <div class="miniData">
             <div class="miniMetric__label">Daten</div>
             <div class="miniData__buttons">
               <button class="btn btn--tiny btn--ghost" id="btnExport">Export</button>
               <button class="btn btn--tiny btn--ghost" id="btnImport">Import</button>
+              <button class="btn btn--tiny btn--ghost" id="btnOpenGoals">Ziele</button>
               <input type="file" id="importFile" accept="application/json" class="hidden" />
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Meals overview -->
       <div class="card">
         <div class="row row--space row--stackMobile">
           <div class="h2">Tag</div>
-          <div class="row wrap actionsRow">
-            <button class="btn btn--big" id="btnAddIngredientToDay">Zutat hinzufügen</button>
-            <button class="btn btn--big" id="btnAddRecipeToDay">Gericht hinzufügen</button>
-            <button class="btn btn--danger btn--big" id="btnClearDay">Tag leeren</button>
-          </div>
+          <div class="hint" id="dayEmptyHint">Noch keine Einträge.</div>
         </div>
 
-        <div id="dayEntries" class="list"></div>
-        <div class="hint" id="dayEmptyHint">Noch keine Einträge.</div>
+        <div id="mealBlocks" class="mealBlocks"></div>
       </div>
     </section>
 
@@ -92,45 +83,13 @@
     <section class="tab hidden" id="tab-recipes" data-tab="recipes">
       <div class="card">
         <div class="row row--space row--stackMobile">
-  <div class="h2">Gerichte</div>
-  <button class="btn btn--big" id="btnNewRecipe">Neues Gericht</button>
-</div>
-
-<input class="searchInput" id="recipesSearch" type="text" placeholder="Gerichte suchen..." inputmode="search" />
-
-<div id="recipesList" class="list"></div>
-
-        <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
-      </div>
-
-      <div class="card hidden" id="recipeEditorCard">
-        <div class="row row--space row--stackMobile">
-          <div class="h2" id="recipeEditorTitle">Gericht</div>
-          <button class="btn btn--ghost btn--big" id="btnCloseRecipeEditor">Schließen</button>
+          <div class="h2">Gerichte</div>
+          <button class="btn btn--big" id="btnNewRecipe">Neues Gericht</button>
         </div>
 
-        <form id="recipeForm">
-          <label class="field">
-            <span>Name</span>
-            <input type="text" id="recipeName" placeholder="z.B. Hafer Bowl" required />
-          </label>
-
-          <div class="row row--space row--stackMobile">
-            <div class="h3">Zutaten</div>
-            <button class="btn btn--ghost btn--big" type="button" id="btnAddIngredientToRecipe">Zutat hinzufügen</button>
-          </div>
-
-          <div id="recipeIngredients" class="list"></div>
-          <div class="hint" id="recipeIngredientsHint">Noch keine Zutaten im Gericht.</div>
-
-          <div class="row wrap">
-            <button class="btn btn--big" type="submit">Speichern</button>
-            <button class="btn btn--danger btn--big" type="button" id="btnDeleteRecipe">Löschen</button>
-          </div>
-        </form>
-
-        <div class="divider"></div>
-        <div class="summaryBox" id="recipeSummary"></div>
+        <input class="searchInput" id="recipesSearch" type="text" placeholder="Gerichte suchen..." inputmode="search" />
+        <div id="recipesList" class="list"></div>
+        <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
       </div>
     </section>
 
@@ -143,80 +102,29 @@
         </div>
 
         <input class="searchInput" id="ingredientsSearch" type="text" placeholder="Zutaten suchen..." inputmode="search" />
-
-
         <div id="ingredientsList" class="list"></div>
         <div class="hint" id="ingredientsEmptyHint">Noch keine Zutaten.</div>
       </div>
-
-      <div class="card hidden" id="ingredientEditorCard">
-        <div class="row row--space row--stackMobile">
-          <div class="h2" id="ingredientEditorTitle">Zutat</div>
-          <button class="btn btn--ghost btn--big" id="btnCloseIngredientEditor">Schließen</button>
-        </div>
-
-        <form id="ingredientForm">
-          <label class="field">
-            <span>Name</span>
-            <input type="text" id="ingName" required placeholder="z.B. Haferflocken" />
-          </label>
-
-          <label class="field">
-            <span>Marke oder Hersteller</span>
-            <input type="text" id="ingBrand" placeholder="z.B. Hofer" />
-          </label>
-
-          <label class="field">
-            <span>Angaben pro</span>
-            <select id="ingUnitType">
-              <option value="100g">100 g</option>
-              <option value="100ml">100 ml</option>
-              <option value="piece">Stück</option>
-            </select>
-          </label>
-
-          <div class="grid2">
-            <label class="field">
-              <span>kcal</span>
-              <input type="text" inputmode="decimal" id="ingKcal" required placeholder="z.B. 389" />
-            </label>
-            <label class="field">
-              <span>Protein (g)</span>
-              <input type="text" inputmode="decimal" id="ingProtein" required placeholder="z.B. 13" />
-            </label>
-            <label class="field">
-              <span>Kohlenhydrate (g)</span>
-              <input type="text" inputmode="decimal" id="ingCarbs" required placeholder="z.B. 66" />
-            </label>
-            <label class="field">
-              <span>Fett (g)</span>
-              <input type="text" inputmode="decimal" id="ingFat" required placeholder="z.B. 7" />
-            </label>
-          </div>
-
-          <label class="field">
-            <span>Preis (Euro) pro Basis</span>
-            <input type="text" inputmode="decimal" id="ingPrice" required placeholder="z.B. 0,19" />
-          </label>
-
-          <div class="row wrap">
-            <button class="btn btn--big" type="submit">Speichern</button>
-            <button class="btn btn--danger btn--big" type="button" id="btnDeleteIngredient">Löschen</button>
-          </div>
-        </form>
-
-        <div class="divider"></div>
-        <div class="summaryBox" id="ingredientSummary"></div>
-      </div>
     </section>
+
   </main>
 
-  <!-- Bottom Tabs -->
-  <nav class="tabs">
-    <button class="tabBtn tabBtn--active" data-nav="day">Tag</button>
-    <button class="tabBtn" data-nav="recipes">Gerichte</button>
-    <button class="tabBtn" data-nav="ingredients">Zutaten</button>
-  </nav>
+  <!-- Bottom area -->
+  <div class="bottomArea">
+    <!-- Date navigation bar -->
+    <div class="dateBar">
+      <button class="dateNavBtn" id="btnPrevDay" aria-label="Vorheriger Tag">‹</button>
+      <div class="dateLabel" id="dateLabel">Heute</div>
+      <button class="dateNavBtn" id="btnNextDay" aria-label="Nächster Tag">›</button>
+    </div>
+
+    <!-- Bottom Tabs -->
+    <nav class="tabs">
+      <button class="tabBtn tabBtn--active" data-nav="day">Tag</button>
+      <button class="tabBtn" data-nav="recipes">Gerichte</button>
+      <button class="tabBtn" data-nav="ingredients">Zutaten</button>
+    </nav>
+  </div>
 
   <!-- Generic modal -->
   <div class="modal hidden" id="modal">
