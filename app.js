@@ -1263,10 +1263,9 @@ h.textContent = t("noHits");
 
 function openRecipePickerForDay(mealKey, onDone) {
   openModal(t("addRecipe"), (container) => {
-
     const search = document.createElement("input");
     search.className = "searchInput";
-search.placeholder = t("searchPlaceholder");
+    search.placeholder = t("searchPlaceholder");
     search.inputMode = "search";
     container.appendChild(search);
 
@@ -1277,6 +1276,7 @@ search.placeholder = t("searchPlaceholder");
     function render(filter) {
       list.innerHTML = "";
       const f = (filter || "").toLowerCase();
+
       const items = state.recipes
         .slice()
         .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
@@ -1286,15 +1286,15 @@ search.placeholder = t("searchPlaceholder");
         const row = document.createElement("div");
         row.className = "modalRow";
 
-        const t = calcRecipeTotals(r);
+        const totals = calcRecipeTotals(r); // <-- NICHT "t" nennen!
 
         row.innerHTML = `
           <div class="row row--space">
             <div>
               <strong>${escapeHtml(r.name)}</strong>
-              <div class="item__sub">${escapeHtml(lineFull(t.price, t.kcal, t.protein, t.carbs, t.fat))}</div>
+              <div class="item__sub">${escapeHtml(lineFull(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat))}</div>
             </div>
-            <div class="item__right">${escapeHtml(euro(t.price))}</div>
+            <div class="item__right">${escapeHtml(euro(totals.price))}</div>
           </div>
         `;
 
@@ -1302,16 +1302,18 @@ search.placeholder = t("searchPlaceholder");
         factor.className = "searchInput";
         factor.type = "text";
         factor.inputMode = "decimal";
-        factor.placeholder = "Menge als Faktor (1 normal, 0,5 halb, 2 doppelt)";
+        factor.placeholder = (loadLanguage() === "en")
+          ? "Amount as factor (1 normal, 0.5 half, 2 double)"
+          : "Menge als Faktor (1 normal, 0,5 halb, 2 doppelt)";
         row.appendChild(factor);
 
         const btn = document.createElement("button");
         btn.className = "btn";
-btn.textContent = t("addButton");
+        btn.textContent = t("addButton");
         btn.addEventListener("click", () => {
           const n = parseNumber(factor.value);
           if (!Number.isFinite(n) || n <= 0) {
-            alert("Faktor muss > 0 sein.");
+            alert((loadLanguage() === "en") ? "Factor must be > 0." : "Faktor muss > 0 sein.");
             return;
           }
 
@@ -1335,7 +1337,7 @@ btn.textContent = t("addButton");
       if (items.length === 0) {
         const h = document.createElement("div");
         h.className = "hint";
-h.textContent = t("noHits");
+        h.textContent = t("noHits");
         list.appendChild(h);
       }
     }
@@ -1344,6 +1346,7 @@ h.textContent = t("noHits");
     render("");
   });
 }
+
 
 /* ===== Rendering ===== */
 function renderAll() {

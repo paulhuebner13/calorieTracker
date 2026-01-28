@@ -850,19 +850,54 @@ html:not(.theme--light) .tabBtn--active{
   }
 }
 
+/* =========================================================
+   FINAL MOBILE OVERRIDES (put this at the VERY END)
+   Ziel:
+   - Theme/Lang Buttons so groß wie "Ziele" (btn)
+   - Meal numbers (kcal/protein/carbs/fat) kleiner auf Mobile
+   ========================================================= */
 
-/* Mobile: shrink meal block numbers */
-@media (max-width: 520px){
-  .mealLineValue{
-    font-size: 14px;   /* kleiner */
-    line-height: 1.1;
+/* 1) Theme/Lang: exakt wie .btn auf Mobile */
+@media (pointer: coarse), (max-width: 520px){
+  .themeBtn,
+  .langBtn{
+    /* match .btn sizing on mobile */
+    min-height: calc(60px * var(--ui-scale)) !important;
+    font-size: calc(18px * var(--ui-scale)) !important;
+    padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale)) !important;
+    border-radius: calc(18px * var(--ui-scale)) !important;
+    font-weight: 980 !important;
   }
-  .mealLinePct{
-    font-size: 12px;
-    line-height: 1.1;
+}
+
+/* 2) Meals: Zahlen kleiner (überschreibt pointer:coarse scaling sicher) */
+@media (pointer: coarse), (max-width: 520px){
+  .mealBlock{
+    font-size: 14px !important; /* Basis-Text in Meal-Karte */
   }
+
+  .mealTitle,
+  .mealPrice{
+    font-size: 18px !important;
+  }
+
   .mealLineLabel{
-    font-size: 12px;
+    font-size: 12px !important;
+  }
+
+  .mealLineValue{
+    font-size: 20px !important;  /* <-- DAS ist die große Zahl */
+    line-height: 1.05 !important;
+  }
+
+  .mealLinePct{
+    font-size: 12px !important;
+    line-height: 1.1 !important;
+  }
+
+  .mealRatioLabel,
+  .mealRatioValue{
+    font-size: 12px !important;
   }
 }
 
