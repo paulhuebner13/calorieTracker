@@ -657,13 +657,19 @@ body{
 
 /* ALLES im Block erbt die gleiche Größe */
 .mealBlock .mealLineLabel,
-.mealBlock .mealLineValue,
 .mealBlock .mealLinePct,
 .mealBlock .mealRatioLabel,
 .mealBlock .mealRatioValue{
   font-size: inherit !important;
   line-height: 1.15;
 }
+
+/* WERTE dürfen größer sein */
+.mealBlock .mealLineValue{
+  font-size: var(--meal-value-font) !important;
+  line-height: 1.05;
+}
+
 
 /* nur Gewicht/Farbe unterscheiden (aber NICHT die Größe) */
 .mealBlock .mealLineLabel,
@@ -773,5 +779,24 @@ body{
 @media (pointer: coarse){
   .modalRow .item__sub{
     font-size: calc(16px * var(--ui-scale)) !important;
+  }
+}
+
+
+:root{
+  --meal-value-font: 30px;  /* HIER drehst du die Zahlengröße */
+}
+
+/* NUR die Werte (Zahlen) größer */
+.mealLineValue{
+  font-size: var(--meal-value-font) !important;
+  font-weight: 800 !important; /* optional, macht es lesbarer */
+  line-height: 1.05;
+}
+
+/* Mobil mit deinem Scaling mitziehen lassen */
+@media (pointer: coarse){
+  .mealLineValue{
+    font-size: calc(var(--meal-value-font) * var(--ui-scale)) !important;
   }
 }
