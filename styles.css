@@ -874,19 +874,29 @@ body{
   color: #07131f !important;
 }
 
-/* Ghost/Tiny im Hero exakt gleich behandeln */
-.card--hero .btn--ghost,
-.card--hero .btn--tiny{
-  background: rgba(255,255,255,0.52) !important;
-  border: 1.5px solid rgba(129,166,209,0.55) !important;
-  color: #07131f !important;
+/* Innere Boxen: gleiche Blau-Familie */
+.card--hero .metric,
+.card--hero .miniMetric,
+.card--hero .miniData{
+  border-color: rgba(79,119,166,0.45);
 }
 
-/* Ziele-Button ganz unten: gleicher Stil wie Export/Import (damit es nicht komisch aussieht) */
+/* Buttons im Hero (Export / Import) */
+.card--hero .btn,
+.card--hero .btn--ghost{
+  border-color: rgba(79,119,166,0.45);
+}
+
+
+/* ===== Ziele Button: nur Rahmen, extrem dezent ===== */
+.dayGoalAction{
+  margin-top: 18px;   /* Abstand zum Abendessen */
+}
+
 .dayGoalAction .btn{
   width: 100%;
-  background: rgba(255,255,255,0.52) !important;
-  border: 1.5px solid rgba(79, 119, 166, 0.55) !important;
-  color: #07131f !important;
-  font-weight: 950;
+  background: transparent !important;
+  border: 1.5px solid rgba(79,119,166,0.55); /* gleiches Blau wie Hero-Border */
+  color: rgba(242,244,248,0.78);
+  font-weight: 800;
 }
