@@ -705,7 +705,7 @@ body{
 /* ===== FINAL OVERRIDE: Meal headings bigger everywhere ===== */
 
 .mealTitle{
-  font-size: 24px !important;
+  font-size: 22px !important;
   font-weight: 980;
   letter-spacing: -0.3px;
 }
@@ -727,5 +727,44 @@ body{
 @media (pointer: coarse){
   .item__title{
     font-size: calc(22px * var(--ui-scale)) !important;
+  }
+}
+
+
+/* ===== FINAL OVERRIDE: Make picker titles (Zutat/Gericht hinzufügen) big ===== */
+
+/* Modal generell etwas größere Basisschrift, damit nix "mini" wirkt */
+.modal__sheet{
+  font-size: 18px;
+}
+
+@media (pointer: coarse){
+  .modal__sheet{
+    font-size: calc(18px * var(--ui-scale)) !important;
+  }
+}
+
+/* Der eigentliche Titel im Picker ist <strong>...</strong> */
+.modalRow strong{
+  font-size: 22px !important;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+
+@media (pointer: coarse){
+  .modalRow strong{
+    font-size: calc(22px * var(--ui-scale)) !important;
+  }
+}
+
+/* Optional: der “Untertext” im Picker (Marke usw.) soll nicht winzig sein */
+.modalRow .item__sub{
+  font-size: 16px !important;
+}
+
+@media (pointer: coarse){
+  .modalRow .item__sub{
+    font-size: calc(16px * var(--ui-scale)) !important;
   }
 }
