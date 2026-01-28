@@ -286,9 +286,10 @@ body{
 
 .mealGrid{
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
+
 
 .mealLine{
   border: 1px solid rgba(255,255,255,0.08);
@@ -320,8 +321,20 @@ body{
   border-radius: 14px;
   padding: 10px 12px;
   display: grid;
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
 }
+
+.mealBlock{
+  font-size: calc(18px * var(--ui-scale));
+}
+
+.mealLineValue,
+.mealLinePct,
+.mealRatioValue{
+  font-size: calc(18px * var(--ui-scale));
+}
+
 
 .mealRatioRow{
   display: flex;
@@ -332,15 +345,16 @@ body{
 
 .mealRatioLabel{
   color: var(--muted);
-  font-weight: 800;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 16px;
 }
 
 .mealRatioValue{
-  font-weight: 980;
   font-size: 18px;
-  letter-spacing: -0.2px;
+  font-weight: 500; /* NICHT fett */
+  letter-spacing: 0;
 }
+
 
 /* ===== Modal ===== */
 .modal{
@@ -586,3 +600,41 @@ body{
   .mealLineValue{ font-size: calc(20px * var(--ui-scale)); }
   .mealRatioValue{ font-size: calc(20px * var(--ui-scale)); }
 }
+
+/* ===== Meal block typography unification ===== */
+
+.mealBlock{
+  font-size: 18px; /* Basisgröße für ALLES im Block */
+}
+
+/* Titel & Preis bleiben prominent */
+.mealTitle{
+  font-size: 20px;
+  font-weight: 980;
+}
+
+.mealPrice{
+  font-size: 22px;
+  font-weight: 980;
+}
+
+/* Makro-Labels kleiner & gedimmt */
+.mealLineLabel{
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+/* Werte: NICHT fett, gleich groß */
+.mealLineValue{
+  font-size: 18px;
+  font-weight: 500;
+}
+
+/* Prozent: gleiche Größe, gedimmt */
+.mealLinePct{
+  font-size: 18px;
+  font-weight: 500;
+  color: rgba(242,244,248,0.65);
+}
+
