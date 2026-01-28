@@ -840,4 +840,29 @@ html:not(.theme--light) .tabBtn--active{
   }
 }
 
+/* Mobile: bigger text for theme/lang toggles */
+@media (max-width: 520px){
+  .themeBtn,
+  .langBtn{
+    font-size: 14px;      /* vorher vermutlich 11-12 */
+    padding: 10px 12px;   /* größere Tap-Fläche */
+    min-height: 40px;
+  }
+}
+
+
+/* Mobile: shrink meal block numbers */
+@media (max-width: 520px){
+  .mealLineValue{
+    font-size: 14px;   /* kleiner */
+    line-height: 1.1;
+  }
+  .mealLinePct{
+    font-size: 12px;
+    line-height: 1.1;
+  }
+  .mealLineLabel{
+    font-size: 12px;
+  }
+}
 
