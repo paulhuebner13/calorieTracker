@@ -804,7 +804,7 @@ body{
 }
 /* ===== Day overview (Tagesübersicht) babyblau + passender Rahmen ===== */
 .card--hero{
-  background: #c3e0ff; /* softes babyblau */
+  background: #76b0ee; /* softes babyblau */
   
   border: 2px solid rgba(80,140,210,0.45); /* blauer Rahmen, nicht grau */
   border-radius: 20px;
@@ -829,53 +829,64 @@ body{
     0 10px 30px rgba(20,60,120,0.18);
 }
 
-/* ===== Hero card: innere Rahmen an Babyblau anpassen ===== */
 
-/* Alle inneren Boxen in der Tagesübersicht */
+
+
+/* ===== HERO (Tagesübersicht) ===== */
+.card--hero{
+  background: #84b3e6; /* babyblau innen */
+  border: 2px solid #2f558f; /* DUNKLERES klares Blau */
+  border-radius: 20px;
+
+  color: #07131f;
+
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.25) inset,
+    0 10px 30px rgba(20,60,120,0.22);
+}
+
+
+/* Text im Hero dunkel, Labels leicht gedimmt */
+.card--hero *{
+  color: #07131f !important;
+}
+.card--hero .metric__label,
+.card--hero .metric__sub,
+.card--hero .miniMetric__label,
+.card--hero .miniMetric__sub,
+.card--hero .miniMetric__label,
+.card--hero .miniMetric__sub{
+  color: rgba(7,19,31,0.70) !important;
+}
+
+/* Innere Boxen (6 Kästchen) */
 .card--hero .metric,
 .card--hero .miniMetric,
 .card--hero .miniData{
-  background: rgba(255,255,255,0.45);      /* leicht aufgehellt */
-  border: 1.5px solid rgba(80,140,210,0.35); /* blauer Rahmen */
+  background: rgba(255,255,255,0.52);
+  border: 1.5px solid rgba(129,166,209,0.50);
 }
 
-/* ===== Hero card: Import / Export / Ziele Rahmen anpassen ===== */
-
-/* Buttons innerhalb der Tagesübersicht */
-.card--hero .btn,
-.card--hero .btn--ghost{
-  background: rgba(255,255,255,0.45);        /* hell, passt zum babyblau */
-  border: 1.5px solid rgba(80,140,210,0.35); /* blauer Rahmen */
+/* Buttons im Hero: hell wie die Boxen, nicht "dark theme" */
+.card--hero .btn{
+  background: rgba(255,255,255,0.52);
+  border: 1.5px solid rgba(129,166,209,0.55);
   color: #07131f !important;
 }
 
-
-/* ===== Day actions unter den Meals ===== */
-.dayActions{
-  margin-top: 14px;
-  display: grid;
-  gap: 10px;
+/* Ghost/Tiny im Hero exakt gleich behandeln */
+.card--hero .btn--ghost,
+.card--hero .btn--tiny{
+  background: rgba(255,255,255,0.52) !important;
+  border: 1.5px solid rgba(129,166,209,0.55) !important;
+  color: #07131f !important;
 }
 
-.btn--decent{
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.14);
-  color: rgba(242,244,248,0.78);
-  font-weight: 800;
-}
-
-
-/* ===== Ziele-Button ganz unten ===== */
-.dayGoalAction{
-  margin-top: 14px;
-}
-
+/* Ziele-Button ganz unten: gleicher Stil wie Export/Import (damit es nicht komisch aussieht) */
 .dayGoalAction .btn{
   width: 100%;
-  background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.18);
-  color: rgba(242,244,248,0.75);
-  font-weight: 800;
+  background: rgba(255,255,255,0.52) !important;
+  border: 1.5px solid rgba(79, 119, 166, 0.55) !important;
+  color: #07131f !important;
+  font-weight: 950;
 }
-
-
