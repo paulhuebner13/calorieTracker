@@ -37,7 +37,7 @@ body{
 
 @media (pointer: coarse){
   .content{
-    padding-bottom: calc(360px + env(safe-area-inset-bottom));
+    padding-bottom: calc(260px + env(safe-area-inset-bottom));
   }
 }
 
@@ -98,10 +98,11 @@ body{
 
 .miniRow{
   display: grid;
-  grid-template-columns: 1fr 1fr 1.05fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-top: 12px;
 }
+
 
 .miniMetric{
   border: 1px solid var(--line);
@@ -847,3 +848,34 @@ body{
   border: 1.5px solid rgba(80,140,210,0.35); /* blauer Rahmen */
   color: #07131f !important;
 }
+
+
+/* ===== Day actions unter den Meals ===== */
+.dayActions{
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.btn--decent{
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: rgba(242,244,248,0.78);
+  font-weight: 800;
+}
+
+
+/* ===== Ziele-Button ganz unten ===== */
+.dayGoalAction{
+  margin-top: 14px;
+}
+
+.dayGoalAction .btn{
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(242,244,248,0.75);
+  font-weight: 800;
+}
+
+
