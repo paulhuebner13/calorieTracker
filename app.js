@@ -90,12 +90,12 @@ function ratiosText(price, kcal, protein) {
   const p100prot = (protein > 0) ? (price / protein) * 100 : NaN;
   const p100kcal = (kcal > 0) ? (price / kcal) * 100 : NaN;
 
-  // NEW: protein per 100 kcal
   const protPer100kcal = (kcal > 0) ? (protein / kcal) * 100 : NaN;
 
   // Reference values from DAILY GOALS (computed "average" target)
   const refP100prot = (state?.goals?.protein > 0) ? (state.goals.price / state.goals.protein) * 100 : NaN;
   const refP100kcal = (state?.goals?.kcal > 0) ? (state.goals.price / state.goals.kcal) * 100 : NaN;
+  const refProtPer100kcal = (state?.goals?.kcal > 0) ? (state.goals.protein / state.goals.kcal) * 100 : NaN;
 
   const a = Number.isFinite(p100prot) ? euroPlain(p100prot) : "n/a";
   const b = Number.isFinite(p100kcal) ? euroPlain(p100kcal) : "n/a";
@@ -107,8 +107,13 @@ function ratiosText(price, kcal, protein) {
     ? `${round1(protPer100kcal).replace(".", ",")} g`
     : "n/a";
 
-  return `· € / 100 g Protein ${a}${aRef} · € / 100 kcal ${b}${bRef} · ${t("proteinPer100kcal")} ${c}`;
+  const cRef = Number.isFinite(refProtPer100kcal)
+    ? ` (Ø ${round1(refProtPer100kcal).replace(".", ",")} g)`
+    : "";
+
+  return `· € / 100 g Protein ${a}${aRef} · € / 100 kcal ${b}${bRef} · ${t("proteinPer100kcal")} ${c}${cRef}`;
 }
+
 
 
 
@@ -564,8 +569,20 @@ btnOpenGoals.addEventListener("click", () => {
 const ingredientsSearch = $("#ingredientsSearch");
 const recipesSearch = $("#recipesSearch");
 
+const ingredientsSort = $("#ingredientsSort");
+const ingredientsSortDir = $("#ingredientsSortDir");
+const recipesSort = $("#recipesSort");
+const recipesSortDir = $("#recipesSortDir");
+
+
 let ingredientsFilter = "";
 let recipesFilter = "";
+
+let ingredientsSortKey = "name";
+let recipesSortKey = "name";
+let ingredientsSortAsc = true;
+let recipesSortAsc = true;
+
 
 if (ingredientsSearch) {
   ingredientsSearch.addEventListener("input", () => {
@@ -579,6 +596,82 @@ if (recipesSearch) {
     renderRecipes();
   });
 }
+
+/* ===== SORT (tabs) ===== */
+
+function updateSortDirButton(btn, asc) {
+  if (!btn) return;
+  btn.textContent = asc ? "↑" : "↓";
+}
+
+if (ingredientsSort) {
+  ingredientsSort.addEventListener("change", () => {
+    ingredientsSortKey = ingredientsSort.value || "name";
+    renderIngredients();
+  });
+}
+if (ingredientsSortDir) {
+  ingredientsSortDir.addEventListener("click", () => {
+    ingredientsSortAsc = !ingredientsSortAsc;
+    updateSortDirButton(ingredientsSortDir, ingredientsSortAsc);
+    renderIngredients();
+  });
+}
+
+if (recipesSort) {
+  recipesSort.addEventListener("change", () => {
+    recipesSortKey = recipesSort.value || "name";
+    renderRecipes();
+  });
+}
+if (recipesSortDir) {
+  recipesSortDir.addEventListener("click", () => {
+    recipesSortAsc = !recipesSortAsc;
+    updateSortDirButton(recipesSortDir, recipesSortAsc);
+    renderRecipes();
+  });
+}
+
+// init arrows
+updateSortDirButton(ingredientsSortDir, ingredientsSortAsc);
+updateSortDirButton(recipesSortDir, recipesSortAsc);
+
+
+/* ===== Sort helpers ===== */
+
+function metricP100prot(price, protein) {
+  return (protein > 0) ? (price / protein) * 100 : NaN;
+}
+
+function metricP100kcal(price, kcal) {
+  return (kcal > 0) ? (price / kcal) * 100 : NaN;
+}
+
+function metricProtPer100kcal(protein, kcal) {
+  return (kcal > 0) ? (protein / kcal) * 100 : NaN;
+}
+
+function sortByKey(items, key, asc, valueFnName, valueFnMetric) {
+  const dir = asc ? 1 : -1;
+
+  return items.slice().sort((a, b) => {
+    if (key === "name") {
+      return dir * ((a.name || "").localeCompare(b.name || ""));
+    }
+
+    const va = valueFnMetric(a);
+    const vb = valueFnMetric(b);
+
+    const aOk = Number.isFinite(va);
+    const bOk = Number.isFinite(vb);
+
+    if (aOk && bOk) return dir * (va - vb);
+    if (aOk && !bOk) return -1;
+    if (!aOk && bOk) return 1;
+    return dir * ((a.name || "").localeCompare(b.name || ""));
+  });
+}
+
 
 /* ===== Ingredients ===== */
 const ingredientsList = $("#ingredientsList");
@@ -1048,6 +1141,11 @@ const dayCarbsPct = $("#dayCarbsPct");
 const dayFatValue = $("#dayFatValue");
 const dayFatPct = $("#dayFatPct");
 
+const dayP100ProtValue = $("#dayP100ProtValue");
+const dayP100KcalValue = $("#dayP100KcalValue");
+const dayProtPer100kcalValue = $("#dayProtPer100kcalValue");
+
+
 function openMealModal(mealKey) {
   const meal = MEALS.find(m => m.key === mealKey);
 const mealLabel = meal ? t(meal.labelKey) : t("entries");
@@ -1466,6 +1564,41 @@ const dayRefP100kcal = (state.goals.kcal > 0)
   ? (state.goals.price / state.goals.kcal) * 100
   : NaN;
 
+const dayRefProtPer100kcal = (state.goals.kcal > 0)
+  ? (state.goals.protein / state.goals.kcal) * 100
+  : NaN;
+
+// Day ratios from totals
+const dayP100prot = eurosPer100gProtein(dayTotals);
+const dayP100kcal = eurosPer100kcal(dayTotals);
+const dayProtPer100kcal = (dayTotals.kcal > 0) ? (dayTotals.protein / dayTotals.kcal) * 100 : NaN;
+
+// Text with averages
+const dayP100protText = Number.isFinite(dayP100prot) ? `${euroPlain(dayP100prot)} (Ø ${euroPlain(dayRefP100prot)})` : "n/a";
+const dayP100kcalText = Number.isFinite(dayP100kcal) ? `${euroPlain(dayP100kcal)} (Ø ${euroPlain(dayRefP100kcal)})` : "n/a";
+const dayProtPer100kcalText = Number.isFinite(dayProtPer100kcal)
+  ? `${round1(dayProtPer100kcal).replace(".", ",")} g (Ø ${round1(dayRefProtPer100kcal).replace(".", ",")} g)`
+  : "n/a";
+
+// Colors
+const dayP100protColor = ratioColor(dayP100prot, dayRefP100prot);         // lower is better
+const dayP100kcalColor = ratioColor(dayP100kcal, dayRefP100kcal);         // lower is better
+const dayProtPer100kcalColor = ratioColor(dayRefProtPer100kcal, dayProtPer100kcal); // higher is better
+
+if (dayP100ProtValue) {
+  dayP100ProtValue.textContent = dayP100protText;
+  dayP100ProtValue.style.color = dayP100protColor;
+}
+if (dayP100KcalValue) {
+  dayP100KcalValue.textContent = dayP100kcalText;
+  dayP100KcalValue.style.color = dayP100kcalColor;
+}
+if (dayProtPer100kcalValue) {
+  dayProtPer100kcalValue.textContent = dayProtPer100kcalText;
+  dayProtPer100kcalValue.style.color = dayProtPer100kcalColor;
+}
+
+
 
   // Render meal blocks overview
   mealBlocks.innerHTML = "";
@@ -1509,9 +1642,17 @@ const protPer100kcalText = Number.isFinite(protPer100kcal)
         const refProtLabel = Number.isFinite(dayRefP100prot) ? ` (Ø ${euroPlain(dayRefP100prot)})` : "";
     const refKcalLabel = Number.isFinite(dayRefP100kcal) ? ` (Ø ${euroPlain(dayRefP100kcal)})` : "";
 
+    const refProtPer100kcalLabel = Number.isFinite(dayRefProtPer100kcal)
+  ? ` (Ø ${round1(dayRefProtPer100kcal).replace(".", ",")} g)`
+  : "";
+
+
 
     const protColor = ratioColor(p100prot, dayRefP100prot);
     const kcalColor = ratioColor(p100kcal, dayRefP100kcal);
+
+    const protPer100kcalColor = ratioColor(dayRefProtPer100kcal, protPer100kcal); // higher is better
+
 
     block.innerHTML = `
       <div class="mealTop">
@@ -1563,9 +1704,12 @@ const protPer100kcalText = Number.isFinite(protPer100kcal)
         </div>
 
         <div class="mealRatioRow">
-  <div class="mealRatioLabel">${escapeHtml(t("proteinPer100kcal"))}</div>
-  <div class="mealRatioValue">${escapeHtml(protPer100kcalText)}</div>
+  <div class="mealRatioLabel">${escapeHtml(t("proteinPer100kcal") + refProtPer100kcalLabel)}</div>
+  <div class="mealRatioValue" style="color:${escapeHtml(protPer100kcalColor)}">
+    ${escapeHtml(protPer100kcalText)}
+  </div>
 </div>
+
 
 
         <div class="mealRatioRow">
@@ -1584,15 +1728,22 @@ const protPer100kcalText = Number.isFinite(protPer100kcal)
 function renderIngredients() {
   ingredientsList.innerHTML = "";
 
-  const items = state.ingredients
+    let items = state.ingredients
     .slice()
-    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
     .filter(ing => {
       if (!ingredientsFilter) return true;
       const n = (ing.name || "").toLowerCase();
       const b = (ing.brand || "").toLowerCase();
       return n.includes(ingredientsFilter) || b.includes(ingredientsFilter);
     });
+
+  items = sortByKey(items, ingredientsSortKey, ingredientsSortAsc, "ingredients", (ing) => {
+    if (ingredientsSortKey === "p100prot") return metricP100prot(ing.price, ing.protein);
+    if (ingredientsSortKey === "p100kcal") return metricP100kcal(ing.price, ing.kcal);
+    if (ingredientsSortKey === "protPer100kcal") return metricProtPer100kcal(ing.protein, ing.kcal);
+    return NaN;
+  });
+
 
   if (items.length === 0) ingredientsEmptyHint.classList.remove("hidden");
   else ingredientsEmptyHint.classList.add("hidden");
@@ -1623,13 +1774,21 @@ function renderIngredients() {
 function renderRecipes() {
   recipesList.innerHTML = "";
 
-  const items = state.recipes
+    let items = state.recipes
     .slice()
-    .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
     .filter(r => {
       if (!recipesFilter) return true;
       return (r.name || "").toLowerCase().includes(recipesFilter);
     });
+
+  items = sortByKey(items, recipesSortKey, recipesSortAsc, "recipes", (r) => {
+    const totals = calcRecipeTotals(r);
+    if (recipesSortKey === "p100prot") return metricP100prot(totals.price, totals.protein);
+    if (recipesSortKey === "p100kcal") return metricP100kcal(totals.price, totals.kcal);
+    if (recipesSortKey === "protPer100kcal") return metricProtPer100kcal(totals.protein, totals.kcal);
+    return NaN;
+  });
+
 
   if (items.length === 0) recipesEmptyHint.classList.remove("hidden");
   else recipesEmptyHint.classList.add("hidden");

@@ -67,6 +67,25 @@
         </div>
       </div>
 
+              <!-- Day ratios overview -->
+        <div class="dayRatios" id="dayRatios">
+          <div class="dayRatioItem">
+            <div class="dayRatioLabel" id="lblDayP100Prot">€ / 100 g Protein</div>
+            <div class="dayRatioValue" id="dayP100ProtValue">n/a</div>
+          </div>
+
+          <div class="dayRatioItem">
+            <div class="dayRatioLabel" id="lblDayP100Kcal">€ / 100 kcal</div>
+            <div class="dayRatioValue" id="dayP100KcalValue">n/a</div>
+          </div>
+
+          <div class="dayRatioItem">
+            <div class="dayRatioLabel" id="lblDayProtPer100kcal">Protein / 100 kcal</div>
+            <div class="dayRatioValue" id="dayProtPer100kcalValue">n/a</div>
+          </div>
+        </div>
+
+
       <!-- Meals overview -->
       <div class="hint" id="dayEmptyHint"></div>
 
@@ -100,6 +119,16 @@
         </div>
 
         <input class="searchInput" id="recipesSearch" type="text" placeholder="Gerichte suchen..." inputmode="search" />
+        <div class="sortRow">
+  <select class="sortSelect" id="recipesSort">
+    <option value="name">Name</option>
+    <option value="p100prot">€ / 100 g Protein</option>
+    <option value="p100kcal">€ / 100 kcal</option>
+    <option value="protPer100kcal">Protein / 100 kcal</option>
+  </select>
+  <button class="btn btn--ghost sortDirBtn" id="recipesSortDir" type="button">↓</button>
+</div>
+
         <div id="recipesList" class="list"></div>
         <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
       </div>
@@ -114,6 +143,16 @@
         </div>
 
         <input class="searchInput" id="ingredientsSearch" type="text" placeholder="Zutaten suchen..." inputmode="search" />
+        <div class="sortRow">
+  <select class="sortSelect" id="ingredientsSort">
+    <option value="name">Name</option>
+    <option value="p100prot">€ / 100 g Protein</option>
+    <option value="p100kcal">€ / 100 kcal</option>
+    <option value="protPer100kcal">Protein / 100 kcal</option>
+  </select>
+  <button class="btn btn--ghost sortDirBtn" id="ingredientsSortDir" type="button">↓</button>
+</div>
+
         <div id="ingredientsList" class="list"></div>
         <div class="hint" id="ingredientsEmptyHint">Noch keine Zutaten.</div>
       </div>

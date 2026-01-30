@@ -332,6 +332,35 @@ html:not(.theme--light) .themeBtn--active{
 .field{ display: grid; gap: 8px; margin: 12px 0; }
 .field span{ color: var(--muted); font-size: 14px; font-weight: 800; }
 
+/* Sort row under search */
+.sortRow{
+  display: grid;
+  grid-template-columns: 1fr 70px;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.sortSelect{
+  min-height: 54px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.72);
+  color: var(--text);
+  font-weight: 900;
+  padding: 12px 14px;
+  outline: none;
+}
+
+html:not(.theme--light) .sortSelect{
+  background: rgba(255,255,255,0.06);
+}
+
+.sortDirBtn{
+  min-height: 54px;
+  font-size: 18px;
+}
+
+
 .field input,
 .searchInput{
   background: rgba(255,255,255,0.72);
@@ -452,6 +481,56 @@ html:not(.theme--light) .item:hover{
   white-space: pre-line;
   font-weight: 700;
 }
+
+/* -------------------------
+   DAY RATIOS (Hero)
+   ------------------------- */
+.dayRatios{
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  background: var(--card-strong);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+html:not(.theme--light) .dayRatios{
+  background: rgba(255,255,255,0.06);
+}
+
+.dayRatioItem{
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 6px;
+  background: rgba(255,255,255,0.30);
+}
+
+html:not(.theme--light) .dayRatioItem{
+  background: rgba(255,255,255,0.05);
+}
+
+.dayRatioLabel{
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.dayRatioValue{
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--text);
+}
+
+@media (max-width: 520px){
+  .dayRatios{ grid-template-columns: 1fr; }
+}
+
 
 /* -------------------------
    MEALS
