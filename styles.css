@@ -959,3 +959,22 @@ html:not(.theme--light) .tabBtn--active{
 
 }
 
+/* =========================================================
+   FINAL FIX: Modal Buttons Mobile Font Size
+   Fixes:
+   - "Gericht hinzufügen"
+   - "Zutat hinzufügen"
+   - alle .btn im Modal auf Mobile
+   ========================================================= */
+
+@media (pointer: coarse), (max-width: 520px) {
+
+  .modal .btn{
+    font-size: calc(18px * var(--ui-scale)) !important;
+    min-height: calc(60px * var(--ui-scale)) !important;
+    padding: calc(16px * var(--ui-scale)) calc(18px * var(--ui-scale)) !important;
+    border-radius: calc(18px * var(--ui-scale)) !important;
+    font-weight: 980 !important;
+  }
+
+}
