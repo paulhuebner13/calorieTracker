@@ -90,6 +90,9 @@ function ratiosText(price, kcal, protein) {
   const p100prot = (protein > 0) ? (price / protein) * 100 : NaN;
   const p100kcal = (kcal > 0) ? (price / kcal) * 100 : NaN;
 
+  // NEW: protein per 100 kcal
+  const protPer100kcal = (kcal > 0) ? (protein / kcal) * 100 : NaN;
+
   // Reference values from DAILY GOALS (computed "average" target)
   const refP100prot = (state?.goals?.protein > 0) ? (state.goals.price / state.goals.protein) * 100 : NaN;
   const refP100kcal = (state?.goals?.kcal > 0) ? (state.goals.price / state.goals.kcal) * 100 : NaN;
@@ -100,8 +103,13 @@ function ratiosText(price, kcal, protein) {
   const aRef = Number.isFinite(refP100prot) ? ` (Ø ${euroPlain(refP100prot)})` : "";
   const bRef = Number.isFinite(refP100kcal) ? ` (Ø ${euroPlain(refP100kcal)})` : "";
 
-  return `· € / 100 g Protein ${a}${aRef} · € / 100 kcal ${b}${bRef}`;
+  const c = Number.isFinite(protPer100kcal)
+    ? `${round1(protPer100kcal).replace(".", ",")} g`
+    : "n/a";
+
+  return `· € / 100 g Protein ${a}${aRef} · € / 100 kcal ${b}${bRef} · ${t("proteinPer100kcal")} ${c}`;
 }
+
 
 
 function lineFull(price, kcal, protein, carbs, fat) {
@@ -1444,8 +1452,10 @@ function renderDay() {
   dayFatPct.textContent = `${pctOfGoal(dayTotals.fat, state.goals.fat)}%`;
 
   // Empty hint
-  const hasAny = visibleEntries.length > 0;
-  dayEmptyHint.classList.toggle("hidden", hasAny);
+const hasAny = visibleEntries.length > 0;
+dayEmptyHint.textContent = t("noEntries");
+dayEmptyHint.classList.toggle("hidden", hasAny);
+
 
 // Fixed daily reference ratios (based on goals)
 const dayRefP100prot = (state.goals.protein > 0)
@@ -1469,6 +1479,12 @@ const dayRefP100kcal = (state.goals.kcal > 0)
 
     const p100prot = eurosPer100gProtein(totals);
     const p100kcal = eurosPer100kcal(totals);
+
+    const protPer100kcal = (totals.kcal > 0) ? (totals.protein / totals.kcal) * 100 : NaN;
+const protPer100kcalText = Number.isFinite(protPer100kcal)
+  ? `${round1(protPer100kcal).replace(".", ",")} g`
+  : "n/a";
+
 
     const block = document.createElement("div");
     block.className = "mealBlock";
@@ -1545,6 +1561,12 @@ const dayRefP100kcal = (state.goals.kcal > 0)
           </div>
 
         </div>
+
+        <div class="mealRatioRow">
+  <div class="mealRatioLabel">${escapeHtml(t("proteinPer100kcal"))}</div>
+  <div class="mealRatioValue">${escapeHtml(protPer100kcalText)}</div>
+</div>
+
 
         <div class="mealRatioRow">
 <div class="mealRatioLabel">${escapeHtml(t("ratioPricePctLabel"))}</div>
@@ -1647,6 +1669,8 @@ const I18N = {
     fatLabel: "Fett (g)",
     dataLabel: "Daten",
 
+    proteinPer100kcal: "Protein / 100 kcal",
+
     addIngredient: "Zutat hinzufügen",
     addRecipe: "Gericht hinzufügen",
     addButton: "Eintragen",
@@ -1706,6 +1730,8 @@ const I18N = {
     carbsLabel: "Carbs (g)",
     fatLabel: "Fat (g)",
     dataLabel: "Data",
+
+    proteinPer100kcal: "Protein per 100 kcal",
 
     addIngredient: "Add ingredient",
     addRecipe: "Add recipe",
