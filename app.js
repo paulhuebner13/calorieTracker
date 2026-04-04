@@ -1867,8 +1867,8 @@ const I18N = {
 
     modalClose: "Schließen",
     data: "Daten",
-    export: "Ex",
-    import: "Im",
+    export: "E",
+    import: "I",
 
     // meals
     breakfast: "Frühstück",
@@ -1929,8 +1929,8 @@ const I18N = {
 
     modalClose: "Close",
     data: "Data",
-    export: "Ex",
-    import: "Im",
+    export: "E",
+    import: "I",
 
     breakfast: "Breakfast",
     lunch: "Lunch",
