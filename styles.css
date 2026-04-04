@@ -995,12 +995,31 @@ html:not(.theme--light) .tabBtn--active{
   }
 
   .metrics3,
-  .miniRow,
   .mealBlocks,
-  .mealGrid,
+  .dayRatios{
+    gap: 10px !important;
+  }
+
+  .metrics3{
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .miniRow{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .miniData{
+    grid-column: 1 / -1 !important;
+  }
+
+  .mealGrid{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
   .dayRatios{
     grid-template-columns: 1fr !important;
-    gap: 10px !important;
   }
 
   .metric{
@@ -1094,5 +1113,70 @@ html:not(.theme--light) .tabBtn--active{
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+}
+
+
+/* =========================================================
+   MOBILE TUNING V3
+   Keep daily metrics in rows instead of one card per row
+   ========================================================= */
+@media screen and (max-width: 700px) {
+  .metrics3{
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .metric{
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .metric__label{
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+
+  .metric__value{
+    font-size: 24px !important;
+    margin-top: 6px !important;
+  }
+
+  .metric__sub{
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+
+  .miniRow{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .miniMetric,
+  .miniData{
+    padding: 10px !important;
+    min-height: auto !important;
+    border-radius: 14px !important;
+  }
+
+  .miniMetric__label{
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+
+  .miniMetric__value{
+    font-size: 18px !important;
+    margin-top: 6px !important;
+  }
+
+  .miniMetric__sub{
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+
+  .miniData__buttons{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
   }
 }
