@@ -1824,7 +1824,7 @@ const I18N = {
     kcalLabel: "kcal",
     proteinLabel: "Protein (g)",
     priceLabel: "Preis (€)",
-    carbsLabel: "Kohlenhydrate (g)",
+    carbsLabel: "Kohlenhy. (g)",
     fatLabel: "Fett (g)",
     dataLabel: "Daten",
 
@@ -1867,8 +1867,8 @@ const I18N = {
 
     modalClose: "Schließen",
     data: "Daten",
-    export: "Export",
-    import: "Import",
+    export: "Ex",
+    import: "Im",
 
     // meals
     breakfast: "Frühstück",
@@ -1929,8 +1929,8 @@ const I18N = {
 
     modalClose: "Close",
     data: "Data",
-    export: "Export",
-    import: "Import",
+    export: "Ex",
+    import: "Im",
 
     breakfast: "Breakfast",
     lunch: "Lunch",
