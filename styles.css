@@ -316,8 +316,8 @@ html:not(.theme--light) .sortSelect:focus{
   border-radius:12px;
   padding:8px;
   display:grid;
-  grid-template-columns:1fr;
-  gap:8px;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:6px;
   background:var(--card-strong);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
@@ -524,4 +524,95 @@ html:not(.theme--light) .tabBtn{ color:rgba(242,244,248,0.66); }
   .mealTitle, .mealPrice, .item__title, .h2{ font-size:13px; }
   .mealLineValue, .dayRatioValue{ font-size:14px; }
   .btn, .themeBtn, .langBtn, .tabBtn, .dateLabel{ font-size:13px; }
+}
+
+
+/* ===== Hard mobile corrections ===== */
+@media (max-width: 700px){
+  .metrics3{
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:6px;
+  }
+
+  .miniRow{
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:6px;
+    margin-top:6px;
+    align-items:stretch;
+  }
+
+  .miniMetric,
+  .miniData{
+    min-height:72px;
+    height:100%;
+    padding:8px;
+    border-radius:10px;
+  }
+
+  .miniMetric__label,
+  .miniData .miniMetric__label{
+    font-size:9px;
+    line-height:1.1;
+    min-height:0;
+  }
+
+  .miniMetric__value{
+    font-size:14px;
+    margin-top:6px;
+    line-height:1;
+  }
+
+  .miniMetric__sub{
+    font-size:10px;
+    margin-top:4px;
+    line-height:1.1;
+  }
+
+  .miniData{
+    display:grid;
+    align-content:center;
+    gap:6px;
+  }
+
+  .miniData > .miniMetric__label{
+    display:none;
+  }
+
+  .miniData__buttons{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px;
+    width:100%;
+  }
+
+  .miniData__buttons .btn{
+    width:100%;
+    min-width:0;
+    padding:6px 0;
+    min-height:28px;
+    font-size:11px;
+    border-radius:8px;
+  }
+
+  .dayRatios{
+    grid-template-columns:repeat(3, minmax(0, 1fr));
+    gap:6px;
+  }
+
+  .dayRatioItem{
+    min-width:0;
+    padding:7px 6px;
+    border-radius:10px;
+    gap:4px;
+  }
+
+  .dayRatioLabel{
+    font-size:9px;
+    line-height:1.1;
+  }
+
+  .dayRatioValue{
+    font-size:12px;
+    line-height:1;
+  }
 }
