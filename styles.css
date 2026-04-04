@@ -44,7 +44,7 @@
 
   /* UI scaling */
   --ui-scale: 1;
-  --ui-scale-phone: 1.02;
+  --ui-scale-phone: 1.6;
   --meal-font: 18px;
   --meal-value-font: 30px;
 }
@@ -82,36 +82,6 @@ html:not(.theme--light){
 /* -------------------------
    RESET / BASE
    ------------------------- */
-
-
-/* Mobile layout safety: prevent horizontal overflow in real phone view */
-html, body{
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-.metrics3,
-.miniRow,
-.mealGrid,
-.themeToggle,
-.langToggle,
-.tabs,
-.row,
-.mealTop,
-.mealRatioRow{
-  min-width: 0;
-}
-
-.metric,
-.miniMetric,
-.miniData,
-.mealLine,
-.dayRatioItem,
-.tabBtn,
-.themeBtn,
-.langBtn{
-  min-width: 0;
-}
 *{ box-sizing: border-box; }
 html, body{ height: 100%; }
 
@@ -990,88 +960,139 @@ html:not(.theme--light) .tabBtn--active{
 }
 
 
-/* Real phone viewport fixes */
-@media (max-width: 520px){
-  :root{ --ui-scale: 1; }
+/* =========================================================
+   MOBILE HARD OVERRIDES V2
+   Forces normal phone layout without desktop mode
+   ========================================================= */
+@media screen and (max-width: 700px) {
+  :root{
+    --ui-scale: 1 !important;
+    --ui-scale-phone: 1 !important;
+    --meal-font: 16px !important;
+    --meal-value-font: 24px !important;
+  }
 
-  .content{
+  html, body{
     width: 100%;
     max-width: 100%;
-    padding-left: 12px;
-    padding-right: 12px;
-    padding-bottom: calc(190px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+
+  .content{
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: calc(170px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .card,
+  .card--hero{
+    padding: 12px !important;
+    border-radius: 16px !important;
+    margin: 10px 0 !important;
   }
 
   .metrics3,
   .miniRow,
-  .dayRatios,
   .mealBlocks,
-  .themeToggle,
-  .langToggle{
-    width: 100%;
+  .mealGrid,
+  .dayRatios{
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .metric{
+    min-height: auto !important;
+    padding: 12px !important;
+  }
+
+  .metric__label,
+  .metric__sub,
+  .miniMetric__label,
+  .miniMetric__sub,
+  .dateLabel,
+  .tabBtn,
+  .themeBtn,
+  .langBtn,
+  .btn,
+  .btn--tiny,
+  .item__sub,
+  .item__right,
+  .field span,
+  .searchInput,
+  .field input,
+  .field select{
+    font-size: 14px !important;
   }
 
   .metric__value{
-    font-size: clamp(36px, 10vw, 52px);
+    font-size: 32px !important;
+    line-height: 1.05 !important;
   }
 
-  .miniMetric__value{
-    font-size: 24px;
-  }
-
-  .dayRatioValue{
-    font-size: 16px;
-    word-break: break-word;
-  }
-
-  .mealTitle,
-  .mealPrice{
-    font-size: 18px;
-  }
-
-  .mealLine{
-    padding: 10px;
-  }
-
-  .mealLineLabel,
-  .mealLinePct,
-  .mealRatioLabel,
-  .mealRatioValue{
-    font-size: 14px;
-  }
-
+  .miniMetric__value,
+  .dayRatioValue,
   .mealLineValue{
-    font-size: 24px !important;
+    font-size: 20px !important;
+    line-height: 1.05 !important;
+  }
+
+  .btn,
+  .themeBtn,
+  .langBtn,
+  .tabBtn{
+    min-height: 46px !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .btn--tiny,
+  .dateNavBtn{
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .miniData__buttons,
+  .row,
+  .row--space,
+  .sortRow{
+    gap: 8px !important;
+  }
+
+  .row--space,
+  .row--stackMobile{
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .bottomArea{
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .dateBar,
+  .tabs{
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
   }
 
   .tabs{
-    gap: 8px;
-    padding-left: 8px;
-    padding-right: 8px;
+    gap: 8px !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   }
 
   .tabBtn{
-    min-height: 54px;
-    padding: 12px 8px;
-    font-size: 14px;
-    border-radius: 16px;
-  }
-
-  .dateBar{
-    grid-template-columns: 40px 1fr 40px;
-    gap: 8px;
-  }
-
-  .dateNavBtn{
-    height: 38px;
-    font-size: 18px;
-  }
-
-  .themeBtn,
-  .langBtn{
-    min-height: 50px !important;
-    font-size: 16px !important;
-    padding: 12px 10px !important;
-    border-radius: 16px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
