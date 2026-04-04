@@ -961,270 +961,695 @@ html:not(.theme--light) .tabBtn--active{
 
 
 /* =========================================================
-   MOBILE REBUILD FINAL
-   Clean compact phone layout matching real mobile viewport
+   MOBILE HARD OVERRIDES V2
+   Forces normal phone layout without desktop mode
    ========================================================= */
 @media screen and (max-width: 700px) {
   :root{
     --ui-scale: 1 !important;
     --ui-scale-phone: 1 !important;
-    --meal-font: 12px !important;
-    --meal-value-font: 18px !important;
+    --meal-font: 16px !important;
+    --meal-value-font: 24px !important;
   }
 
   html, body{
-    overflow-x: hidden !important;
-  }
-
-  body{
-    font-size: 14px !important;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .content{
     max-width: 100% !important;
     width: 100% !important;
     margin: 0 !important;
-    padding: max(8px, env(safe-area-inset-top)) 8px calc(118px + env(safe-area-inset-bottom)) 8px !important;
-  }
-
-  .card,
-  .card--hero,
-  .mealBlock,
-  .dayRatioItem,
-  .item,
-  .modal__content{
-    border-radius: 12px !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: calc(170px + env(safe-area-inset-bottom)) !important;
   }
 
   .card,
   .card--hero{
-    padding: 10px !important;
-    margin: 8px 0 !important;
+    padding: 12px !important;
+    border-radius: 16px !important;
+    margin: 10px 0 !important;
   }
 
-  .row,
-  .wrap,
-  .miniData__buttons,
-  .mealTop,
-  .mealRatioRow{
-    gap: 8px !important;
+  .metrics3,
+  .mealBlocks,
+  .dayRatios{
+    gap: 10px !important;
   }
 
   .metrics3{
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-  }
-
-  .metric{
-    min-height: 82px !important;
-    padding: 10px !important;
-    border-radius: 12px !important;
-  }
-
-  .metric__label{
-    font-size: 11px !important;
-    line-height: 1.15 !important;
-    font-weight: 800 !important;
-  }
-
-  .metric__value{
-    font-size: 18px !important;
-    line-height: 1 !important;
-    margin-top: 12px !important;
-    letter-spacing: -0.3px !important;
-  }
-
-  .metric__sub{
-    font-size: 11px !important;
-    margin-top: 8px !important;
-    line-height: 1 !important;
   }
 
   .miniRow{
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-    margin-top: 8px !important;
-  }
-
-  .miniMetric,
-  .miniData{
-    min-height: 72px !important;
-    padding: 10px !important;
-    border-radius: 12px !important;
-  }
-
-  .miniMetric__label,
-  .miniData .miniMetric__label{
-    font-size: 11px !important;
-    line-height: 1.15 !important;
-  }
-
-  .miniMetric__value{
-    font-size: 16px !important;
-    margin-top: 10px !important;
-    line-height: 1 !important;
-  }
-
-  .miniMetric__sub{
-    font-size: 11px !important;
-    margin-top: 6px !important;
-    line-height: 1 !important;
+    gap: 10px !important;
   }
 
   .miniData{
     grid-column: 1 / -1 !important;
   }
 
-  .miniData__buttons{
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-  }
-
-  .btn,
-  .btn--big,
-  .btn--tiny,
-  .themeBtn,
-  .langBtn,
-  .tabBtn,
-  .dateNavBtn{
-    min-height: 42px !important;
-    font-size: 14px !important;
-    padding: 10px 10px !important;
-    border-radius: 12px !important;
-  }
-
-  .dayGoalAction{
-    margin-top: 10px !important;
-  }
-
-  .themeToggle,
-  .langToggle{
-    margin-top: 8px !important;
+  .mealGrid{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 8px !important;
   }
 
   .dayRatios{
-    gap: 8px !important;
-    margin-top: 8px !important;
+    grid-template-columns: 1fr !important;
   }
 
-  .dayRatioItem{
+  .metric{
+    min-height: auto !important;
+    padding: 12px !important;
+  }
+
+  .metric__label,
+  .metric__sub,
+  .miniMetric__label,
+  .miniMetric__sub,
+  .dateLabel,
+  .tabBtn,
+  .themeBtn,
+  .langBtn,
+  .btn,
+  .btn--tiny,
+  .item__sub,
+  .item__right,
+  .field span,
+  .searchInput,
+  .field input,
+  .field select{
+    font-size: 14px !important;
+  }
+
+  .metric__value{
+    font-size: 32px !important;
+    line-height: 1.05 !important;
+  }
+
+  .miniMetric__value,
+  .dayRatioValue,
+  .mealLineValue{
+    font-size: 20px !important;
+    line-height: 1.05 !important;
+  }
+
+  .btn,
+  .themeBtn,
+  .langBtn,
+  .tabBtn{
+    min-height: 46px !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .btn--tiny,
+  .dateNavBtn{
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .miniData__buttons,
+  .row,
+  .row--space,
+  .sortRow{
+    gap: 8px !important;
+  }
+
+  .row--space,
+  .row--stackMobile{
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .bottomArea{
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .dateBar,
+  .tabs{
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .tabs{
+    gap: 8px !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .tabBtn{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+
+/* =========================================================
+   MOBILE TUNING V3
+   Keep daily metrics in rows instead of one card per row
+   ========================================================= */
+@media screen and (max-width: 700px) {
+  .metrics3{
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .metric{
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .metric__label{
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+
+  .metric__value{
+    font-size: 24px !important;
+    margin-top: 6px !important;
+  }
+
+  .metric__sub{
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+
+  .miniRow{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .miniMetric,
+  .miniData{
     padding: 10px !important;
     min-height: auto !important;
+    border-radius: 14px !important;
   }
 
-  .dayRatioLabel{
+  .miniMetric__label{
     font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+
+  .miniMetric__value{
+    font-size: 18px !important;
+    margin-top: 6px !important;
+  }
+
+  .miniMetric__sub{
+    font-size: 11px !important;
+    margin-top: 4px !important;
+  }
+
+  .miniData__buttons{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+/* =========================================================
+   MOBILE REBUILD V4
+   Single authoritative phone layout
+   ========================================================= */
+@media screen and (max-width: 700px) {
+  :root{
+    --ui-scale: 1 !important;
+    --ui-scale-phone: 1 !important;
+    --meal-font: 13px !important;
+    --meal-value-font: 18px !important;
+  }
+
+  html, body{
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body{
+    font-size: 14px;
+  }
+
+  .content{
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding-top: max(10px, env(safe-area-inset-top)) !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: calc(124px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .card,
+  .card--hero,
+  .item,
+  .mealBlock,
+  .modal__sheet{
+    border-radius: 14px !important;
+  }
+
+  .card,
+  .card--hero,
+  .item,
+  .mealBlock,
+  .modal__sheet,
+  .modalRow{
+    padding: 10px !important;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .row{
+    gap: 8px !important;
+  }
+
+  .row--stackMobile,
+  .row--space{
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+
+  .h2{ font-size: 16px !important; }
+  .h3,
+  .hint,
+  .summaryBox,
+  .item__sub,
+  .item__right,
+  .field span,
+  .dayRatioLabel,
+  .mealLineLabel,
+  .mealLinePct,
+  .mealRatioLabel,
+  .metric__label,
+  .metric__sub,
+  .miniMetric__label,
+  .miniMetric__sub,
+  .dateLabel,
+  .tabBtn,
+  .btn,
+  .btn--tiny,
+  .themeBtn,
+  .langBtn,
+  .searchInput,
+  .field input,
+  .field select,
+  .sortSelect{
+    font-size: 12px !important;
     line-height: 1.2 !important;
   }
 
-  .dayRatioValue{
-    font-size: 16px !important;
-    margin-top: 8px !important;
-    line-height: 1 !important;
+  .metrics3{
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
   }
 
-  .hint{
-    font-size: 12px !important;
+  .metric{
+    min-height: 0 !important;
+    padding: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .metric__label{
+    font-weight: 800 !important;
+    min-height: 28px;
+    display: block;
+  }
+
+  .metric__value{
+    font-size: 22px !important;
+    margin-top: 4px !important;
+    line-height: 1 !important;
+    letter-spacing: -0.4px !important;
+  }
+
+  .metric__sub{
+    margin-top: 4px !important;
+  }
+
+  .miniRow{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
     margin-top: 8px !important;
+  }
+
+  .miniMetric,
+  .miniData{
+    min-height: 0 !important;
+    padding: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .miniData{
+    grid-column: 1 / -1 !important;
+  }
+
+  .miniMetric__label{
+    min-height: 28px;
+    display: block;
+  }
+
+  .miniMetric__value,
+  .dayRatioValue{
+    font-size: 16px !important;
+    margin-top: 4px !important;
+    line-height: 1.05 !important;
+  }
+
+  .miniMetric__sub{
+    margin-top: 4px !important;
+  }
+
+  .miniData__buttons{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .dayRatios{
+    margin-top: 8px !important;
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    border-radius: 12px !important;
+  }
+
+  .dayRatioItem{
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    gap: 4px !important;
+  }
+
+  .dayGoalAction{
+    margin-top: 12px !important;
+  }
+
+  .btn,
+  .themeBtn,
+  .langBtn,
+  .tabBtn,
+  .sortDirBtn,
+  .sortSelect,
+  .field input,
+  .field select,
+  .searchInput{
+    min-height: 40px !important;
+    padding: 9px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  .btn--big{
+    min-height: 42px !important;
+    padding: 10px 12px !important;
+  }
+
+  .btn--tiny,
+  .dateNavBtn{
+    min-height: 36px !important;
+    height: 36px !important;
+    padding: 7px 9px !important;
+    border-radius: 10px !important;
+  }
+
+  .themeToggle,
+  .langToggle,
+  .sortRow,
+  .grid2{
+    gap: 6px !important;
+  }
+
+  .sortRow{
+    grid-template-columns: 1fr 54px !important;
+  }
+
+  .item__top,
+  .mealTop,
+  .mealRatioRow{
+    gap: 8px !important;
+  }
+
+  .item__title,
+  .mealTitle,
+  .mealPrice,
+  .modalRow strong{
+    font-size: 16px !important;
+    line-height: 1.2 !important;
   }
 
   .mealBlocks{
     gap: 8px !important;
+    margin-top: 8px !important;
   }
 
   .mealBlock{
-    padding: 10px !important;
-  }
-
-  .mealTitle,
-  .mealPrice{
-    font-size: 14px !important;
-    line-height: 1.1 !important;
+    gap: 8px !important;
   }
 
   .mealGrid{
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-    margin-top: 8px !important;
+    gap: 6px !important;
   }
 
   .mealLine,
   .mealRatios{
-    padding: 8px !important;
+    padding: 8px 10px !important;
     border-radius: 10px !important;
-  }
-
-  .mealLineLabel,
-  .mealLinePct,
-  .mealRatioLabel{
-    font-size: 10px !important;
-    line-height: 1.15 !important;
   }
 
   .mealLineValue,
   .mealRatioValue{
     font-size: 16px !important;
-    line-height: 1 !important;
-    margin-top: 6px !important;
+    line-height: 1.05 !important;
+  }
+
+  .mealRatios{
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  .searchInput{
+    margin-top: 8px !important;
+  }
+
+  .list{
+    gap: 8px !important;
+    margin-top: 10px !important;
   }
 
   .bottomArea{
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    width: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
   }
 
   .dateBar{
-    padding: 8px !important;
-    grid-template-columns: 42px 1fr 42px !important;
+    grid-template-columns: 36px 1fr 36px !important;
     gap: 8px !important;
-  }
-
-  .dateLabel{
-    font-size: 14px !important;
+    padding: 6px 10px !important;
   }
 
   .tabs{
-    gap: 8px !important;
-    padding: 8px 8px calc(8px + env(safe-area-inset-bottom)) 8px !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    padding: 8px 10px calc(8px + env(safe-area-inset-bottom)) 10px !important;
   }
 
   .tabBtn{
-    font-weight: 800 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 900 !important;
   }
 
-  .searchInput,
-  .field input,
-  .field select,
-  .sortSelect{
-    min-height: 42px !important;
-    font-size: 14px !important;
-    padding: 10px 12px !important;
-    border-radius: 12px !important;
+  .modal{
+    place-items: end stretch !important;
+  }
+
+  .modal__sheet{
+    max-height: 88dvh !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0 !important;
   }
 }
 
 @media screen and (max-width: 380px) {
+  .metric__value{ font-size: 20px !important; }
+  .miniMetric__value,
+  .dayRatioValue,
+  .mealLineValue,
+  .mealRatioValue{ font-size: 15px !important; }
   .metric__label,
+  .metric__sub,
   .miniMetric__label,
+  .miniMetric__sub{ font-size: 11px !important; }
+}
+
+
+/* =========================================================
+   MOBILE COMPACT OVERRIDE V6
+   Strong final override for real phone screens
+   ========================================================= */
+@media screen and (max-width: 700px) {
+  html { font-size: 14px !important; }
+
+  .content{
+    padding: max(8px, env(safe-area-inset-top)) 8px calc(108px + env(safe-area-inset-bottom)) 8px !important;
+  }
+
+  .card,
+  .card--hero,
+  .mealBlock,
+  .item,
+  .modal__sheet,
+  .modalRow{
+    padding: 8px !important;
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
+    border-radius: 12px !important;
+  }
+
+  .metrics3{ gap: 5px !important; }
+  .miniRow{ gap: 5px !important; margin-top: 6px !important; }
+  .mealBlocks,
+  .list,
+  .dayRatios{ gap: 6px !important; margin-top: 6px !important; }
+
+  .metric{
+    padding: 7px !important;
+    border-radius: 10px !important;
+  }
+
+  .metric__label,
+  .metric__sub,
+  .miniMetric__label,
+  .miniMetric__sub,
   .dayRatioLabel,
   .mealLineLabel,
   .mealLinePct,
-  .mealRatioLabel{
-    font-size: 10px !important;
+  .mealRatioLabel,
+  .hint,
+  .dateLabel,
+  .tabBtn,
+  .btn,
+  .btn--tiny,
+  .themeBtn,
+  .langBtn,
+  .searchInput,
+  .field input,
+  .field select,
+  .sortSelect,
+  .item__sub,
+  .item__right,
+  .field span {
+    font-size: 11px !important;
+    line-height: 1.15 !important;
+  }
+
+  .metric__label,
+  .miniMetric__label{
+    min-height: 22px !important;
   }
 
   .metric__value{
-    font-size: 17px !important;
+    font-size: 18px !important;
+    margin-top: 2px !important;
+    line-height: 1 !important;
   }
 
-  .mealTitle,
-  .mealPrice,
+  .miniMetric,
+  .miniData,
+  .dayRatioItem,
+  .mealLine,
+  .mealRatios{
+    padding: 7px 8px !important;
+    border-radius: 10px !important;
+    min-height: 0 !important;
+  }
+
+  .miniMetric__value,
+  .dayRatioValue,
+  .mealLineValue,
+  .mealRatioValue{
+    font-size: 14px !important;
+    margin-top: 3px !important;
+    line-height: 1 !important;
+  }
+
+  .miniData__buttons{
+    gap: 5px !important;
+  }
+
   .btn,
-  .btn--tiny,
-  .tabBtn,
   .themeBtn,
   .langBtn,
-  .dateLabel{
-    font-size: 13px !important;
+  .tabBtn,
+  .sortDirBtn,
+  .sortSelect,
+  .field input,
+  .field select,
+  .searchInput{
+    min-height: 34px !important;
+    padding: 7px 8px !important;
+    border-radius: 10px !important;
   }
+
+  .btn--big{ min-height: 36px !important; padding: 8px 10px !important; }
+  .btn--tiny,
+  .dateNavBtn{ min-height: 32px !important; height: 32px !important; padding: 6px 8px !important; border-radius: 9px !important; }
+
+  .themeToggle,
+  .langToggle,
+  .sortRow,
+  .grid2,
+  .row,
+  .item__top,
+  .mealTop,
+  .mealRatioRow,
+  .miniData__buttons{ gap: 5px !important; }
+
+  .item__title,
+  .mealTitle,
+  .mealPrice,
+  .modalRow strong,
+  .h2{ font-size: 14px !important; line-height: 1.15 !important; }
+
+  .mealGrid{ gap: 5px !important; }
+
+  .dayGoalAction{ margin-top: 8px !important; }
+  .themeToggle,
+  .langToggle,
+  .searchInput{ margin-top: 6px !important; }
+
+  .dateBar{
+    grid-template-columns: 32px 1fr 32px !important;
+    gap: 6px !important;
+    padding: 5px 8px !important;
+  }
+
+  .tabs{
+    gap: 5px !important;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom)) 8px !important;
+  }
+
+  .bottomArea{ padding-bottom: 0 !important; }
+}
+
+@media screen and (max-width: 380px) {
+  .metric__value{ font-size: 16px !important; }
+  .miniMetric__value,
+  .dayRatioValue,
+  .mealLineValue,
+  .mealRatioValue{ font-size: 13px !important; }
 }
