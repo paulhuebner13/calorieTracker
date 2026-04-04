@@ -44,7 +44,7 @@
 
   /* UI scaling */
   --ui-scale: 1;
-  --ui-scale-phone: 1.6;
+  --ui-scale-phone: 1.02;
   --meal-font: 18px;
   --meal-value-font: 30px;
 }
@@ -82,6 +82,36 @@ html:not(.theme--light){
 /* -------------------------
    RESET / BASE
    ------------------------- */
+
+
+/* Mobile layout safety: prevent horizontal overflow in real phone view */
+html, body{
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.metrics3,
+.miniRow,
+.mealGrid,
+.themeToggle,
+.langToggle,
+.tabs,
+.row,
+.mealTop,
+.mealRatioRow{
+  min-width: 0;
+}
+
+.metric,
+.miniMetric,
+.miniData,
+.mealLine,
+.dayRatioItem,
+.tabBtn,
+.themeBtn,
+.langBtn{
+  min-width: 0;
+}
 *{ box-sizing: border-box; }
 html, body{ height: 100%; }
 
@@ -957,4 +987,91 @@ html:not(.theme--light) .tabBtn--active{
     line-height: 1.05 !important;
   }
 
+}
+
+
+/* Real phone viewport fixes */
+@media (max-width: 520px){
+  :root{ --ui-scale: 1; }
+
+  .content{
+    width: 100%;
+    max-width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: calc(190px + env(safe-area-inset-bottom));
+  }
+
+  .metrics3,
+  .miniRow,
+  .dayRatios,
+  .mealBlocks,
+  .themeToggle,
+  .langToggle{
+    width: 100%;
+  }
+
+  .metric__value{
+    font-size: clamp(36px, 10vw, 52px);
+  }
+
+  .miniMetric__value{
+    font-size: 24px;
+  }
+
+  .dayRatioValue{
+    font-size: 16px;
+    word-break: break-word;
+  }
+
+  .mealTitle,
+  .mealPrice{
+    font-size: 18px;
+  }
+
+  .mealLine{
+    padding: 10px;
+  }
+
+  .mealLineLabel,
+  .mealLinePct,
+  .mealRatioLabel,
+  .mealRatioValue{
+    font-size: 14px;
+  }
+
+  .mealLineValue{
+    font-size: 24px !important;
+  }
+
+  .tabs{
+    gap: 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .tabBtn{
+    min-height: 54px;
+    padding: 12px 8px;
+    font-size: 14px;
+    border-radius: 16px;
+  }
+
+  .dateBar{
+    grid-template-columns: 40px 1fr 40px;
+    gap: 8px;
+  }
+
+  .dateNavBtn{
+    height: 38px;
+    font-size: 18px;
+  }
+
+  .themeBtn,
+  .langBtn{
+    min-height: 50px !important;
+    font-size: 16px !important;
+    padding: 12px 10px !important;
+    border-radius: 16px !important;
+  }
 }
