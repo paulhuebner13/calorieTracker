@@ -616,3 +616,95 @@ html:not(.theme--light) .tabBtn{ color:rgba(242,244,248,0.66); }
     line-height:1;
   }
 }
+
+
+/* ===== Final mobile layout fixes ===== */
+@media (max-width: 700px){
+  .miniRow{
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:6px !important;
+    align-items:stretch;
+  }
+
+  .miniMetric,
+  .miniData{
+    grid-column:auto !important;
+    min-height:72px !important;
+    height:100%;
+    padding:8px !important;
+    border-radius:10px !important;
+  }
+
+  .miniData{
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .miniData > .miniMetric__label{
+    display:none !important;
+  }
+
+  .miniData__buttons{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:6px !important;
+    width:100%;
+  }
+
+  .miniData__buttons .btn{
+    width:100%;
+    min-width:0;
+    min-height:28px !important;
+    padding:6px 0 !important;
+    font-size:11px !important;
+    border-radius:8px !important;
+    white-space:nowrap;
+  }
+
+  .dayRatios{
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:6px !important;
+  }
+
+  .dayRatioItem{
+    min-width:0;
+    padding:7px 6px !important;
+  }
+
+  .dayRatioLabel{
+    font-size:9px !important;
+    line-height:1.1 !important;
+  }
+
+  .dayRatioValue{
+    font-size:12px !important;
+    line-height:1 !important;
+  }
+
+  .mealRatios{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:6px 10px !important;
+    padding:8px !important;
+  }
+
+  .mealRatioRow{
+    min-width:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:8px;
+  }
+
+  .mealRatioLabel{
+    font-size:9px !important;
+    line-height:1.15 !important;
+  }
+
+  .mealRatioValue{
+    font-size:10px !important;
+    line-height:1 !important;
+    white-space:nowrap;
+  }
+}
