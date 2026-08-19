@@ -1271,6 +1271,7 @@ hint.textContent = t("noEntries");
 
       for (const entry of visible) {
         let titleText = "";
+        let amountText = "";
         let totals = { price: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 };
 
         if (entry.type === "ingredient") {
@@ -1279,6 +1280,7 @@ hint.textContent = t("noEntries");
 
           const a = calcIngredientTotals(ing, entry.amount);
           titleText = ing.name;
+          amountText = amountLabel(ing.unitType, entry.amount);
           totals = { ...a };
         } else if (entry.type === "recipe") {
           const r = state.recipes.find(x => x.id === entry.refId);
@@ -1287,6 +1289,12 @@ hint.textContent = t("noEntries");
           const recipeTotals = calcRecipeTotals(r);
           const f = entry.amount;
           titleText = r.name;
+          const factorText = round2(f).replace(/([,.]\d*?[1-9])0+$|[,.]0+$/, "$1").replace(".", ",");
+          if (loadLanguage() === "en") {
+            amountText = `${factorText} ${Math.abs(f - 1) < 0.0001 ? "portion" : "portions"}`;
+          } else {
+            amountText = `${factorText} ${Math.abs(f - 1) < 0.0001 ? "Portion" : "Portionen"}`;
+          }
           totals = {
             price: recipeTotals.price * f,
             kcal: recipeTotals.kcal * f,
@@ -1311,16 +1319,17 @@ hint.textContent = t("noEntries");
         row.className = "modalRow pickerCard mealEntryCard";
 
         row.innerHTML = `
-          <div class="pickerCard__head">
-            <strong>${escapeHtml(titleText)}</strong>
+          <div class="pickerCard__head mealEntryHead">
+            <div class="mealEntryHeading">
+              <strong>${escapeHtml(titleText)}</strong>
+              ${amountText ? `<div class="mealEntryAmount">${escapeHtml(amountText)}</div>` : ""}
+            </div>
+            <button class="btn btn--danger mealEntryDelete" type="button">${escapeHtml(t("deleteButton"))}</button>
           </div>
           ${pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
         `;
 
-        const btnDel = document.createElement("button");
-        btnDel.className = "btn btn--danger mealEntryDelete";
-        btnDel.type = "button";
-        btnDel.textContent = "Löschen";
+        const btnDel = row.querySelector(".mealEntryDelete");
         btnDel.addEventListener("click", () => {
           const log = getDayLog(selectedDayKey);
           state.dayLogs[selectedDayKey] = (log || []).filter(e => e.id !== entry.id);
@@ -1329,7 +1338,6 @@ hint.textContent = t("noEntries");
           renderMealList();
         });
 
-        row.appendChild(btnDel);
         list.appendChild(row);
       }
     }

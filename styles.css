@@ -1426,3 +1426,40 @@ html:not(.theme--light) .mealGrid .mealLine:nth-child(4){
 @media (max-width:380px){
   .mealTitle{ padding:0 58px; }
 }
+
+/* ===== UI refinement 7: eaten amount + delete action in meal entry header ===== */
+.mealEntryHead{
+  align-items:flex-start;
+}
+.mealEntryHeading{
+  min-width:0;
+  flex:1;
+}
+.mealEntryAmount{
+  margin-top:3px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.1;
+  font-weight:800;
+}
+.mealEntryCard .mealEntryDelete{
+  flex:0 0 auto;
+  align-self:flex-start;
+  min-height:28px;
+  padding:4px 8px;
+  border-radius:8px;
+  font-size:9px;
+  line-height:1;
+  box-shadow:none;
+}
+@media (min-width:701px){
+  .mealEntryAmount{
+    margin-top:4px;
+    font-size:12px;
+  }
+  .mealEntryCard .mealEntryDelete{
+    min-height:32px;
+    padding:6px 10px;
+    font-size:11px;
+  }
+}
