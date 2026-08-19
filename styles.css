@@ -966,3 +966,303 @@ html:not(.theme--light) .itemStat{
   .itemStat__value{ font-size:11px; }
   .itemStat__reference{ font-size:6.5px; }
 }
+
+/* ===== UI refinement 2: sticky daily KPIs, compact cards, floating create action ===== */
+
+/* Keep the daily KPI panel visible while the day content scrolls underneath. */
+#tab-day > .card--hero{
+  position:sticky;
+  top:max(4px, env(safe-area-inset-top));
+  z-index:20;
+  margin-top:4px;
+  box-shadow:0 10px 26px rgba(11,19,32,0.16);
+}
+html:not(.theme--light) #tab-day > .card--hero{
+  box-shadow:0 12px 28px rgba(0,0,0,0.48);
+}
+
+/* More compact daily KPI tiles; progress sits close to the rounded bottom edge. */
+.metric,
+.miniMetric{
+  padding-bottom:14px !important;
+}
+.metricProgress{
+  position:absolute;
+  left:7px;
+  right:7px;
+  bottom:5px;
+  width:auto;
+  height:4px;
+  margin:0;
+}
+
+.miniData{
+  align-content:center;
+}
+
+/* Floating create buttons stay just above the fixed date/tab navigation. */
+.createBottomBtn{
+  position:fixed;
+  z-index:29;
+  left:max(8px, calc((100vw - 980px) / 2 + 8px));
+  right:max(8px, calc((100vw - 980px) / 2 + 8px));
+  bottom:calc(108px + env(safe-area-inset-bottom));
+  width:auto;
+  margin:0;
+  box-shadow:0 10px 26px rgba(11,19,32,0.20);
+}
+html:not(.theme--light) .createBottomBtn{
+  box-shadow:0 12px 28px rgba(0,0,0,0.50);
+}
+#tab-recipes .list,
+#tab-ingredients .list{
+  margin-bottom:68px;
+}
+
+/* Recipe / ingredient list cards: larger heading/price, less vertical air. */
+.item{
+  gap:7px;
+  padding:9px 10px;
+}
+.item__title{
+  font-size:18px;
+  line-height:1.15;
+}
+.item__price{
+  font-size:17px;
+  line-height:1.1;
+}
+.item__unit{
+  margin-top:2px;
+}
+.itemStats{
+  gap:5px;
+}
+.itemStat{
+  padding:5px 5px;
+  border-radius:9px;
+}
+.itemStat__label{
+  min-height:16px;
+  font-size:9px;
+  line-height:1.05;
+  align-items:center;
+}
+.itemStat__value{
+  margin-top:3px;
+  font-size:16px;
+}
+.itemStat__reference{
+  margin-top:3px;
+}
+
+/* Same nutrient colors as the day overview. */
+.itemStat--kcal{
+  background:rgba(79,143,230,0.13);
+  border-color:rgba(79,143,230,0.30);
+}
+.itemStat--protein{
+  background:rgba(213,163,26,0.13);
+  border-color:rgba(213,163,26,0.30);
+}
+.itemStat--carbs{
+  background:rgba(184,107,43,0.13);
+  border-color:rgba(184,107,43,0.30);
+}
+.itemStat--fat{
+  background:rgba(212,91,115,0.13);
+  border-color:rgba(212,91,115,0.30);
+}
+html:not(.theme--light) .itemStat--kcal{
+  background:rgba(79,143,230,0.17);
+  border-color:rgba(137,199,255,0.32);
+}
+html:not(.theme--light) .itemStat--protein{
+  background:rgba(213,163,26,0.16);
+  border-color:rgba(244,196,74,0.32);
+}
+html:not(.theme--light) .itemStat--carbs{
+  background:rgba(184,107,43,0.17);
+  border-color:rgba(218,143,74,0.32);
+}
+html:not(.theme--light) .itemStat--fat{
+  background:rgba(212,91,115,0.17);
+  border-color:rgba(235,118,143,0.32);
+}
+
+@media (max-width:700px){
+  #tab-day > .card--hero{
+    padding:7px !important;
+  }
+  .metrics3{
+    gap:6px;
+  }
+  .miniRow{
+    gap:6px;
+    margin-top:6px;
+  }
+  .metric,
+  .miniMetric,
+  .miniData{
+    min-height:76px !important;
+    padding:7px 6px 13px !important;
+  }
+  .metric__value,
+  .miniMetric__value{
+    margin-top:4px !important;
+  }
+  .metric__sub,
+  .miniMetric__sub{
+    margin-top:3px !important;
+  }
+  .miniData{
+    padding-bottom:7px !important;
+  }
+  .miniData__buttons .btn{
+    min-height:32px;
+    padding:5px 8px;
+  }
+  .item{
+    padding:8px 8px;
+    gap:6px;
+  }
+  .item__title{
+    font-size:18px !important;
+  }
+  .item__price{
+    font-size:16px !important;
+  }
+  .itemStat{
+    padding:4px 3px !important;
+  }
+  .itemStat__label{
+    min-height:14px !important;
+    font-size:8px !important;
+  }
+  .itemStat__value{
+    margin-top:2px !important;
+    font-size:14px !important;
+  }
+  .itemStat__reference{
+    margin-top:2px !important;
+    font-size:7px !important;
+  }
+}
+
+@media (max-width:380px){
+  .metric,
+  .miniMetric,
+  .miniData{
+    min-height:72px !important;
+  }
+  .item__title{ font-size:17px !important; }
+  .item__price{ font-size:15px !important; }
+  .itemStat__value{ font-size:13px !important; }
+}
+
+@media (min-width:701px){
+  .createBottomBtn{
+    bottom:calc(142px + env(safe-area-inset-bottom));
+    left:max(14px, calc((100vw - 980px) / 2 + 14px));
+    right:max(14px, calc((100vw - 980px) / 2 + 14px));
+  }
+  .item__title{ font-size:24px; }
+  .item__price{ font-size:22px; }
+  .itemStat{ padding:7px 7px; }
+  .itemStat__label{ min-height:20px; }
+  .itemStat__value{ font-size:21px; margin-top:4px; }
+}
+
+/* Compact nutrient cards inside ingredient/recipe pickers. */
+.pickerCard{
+  padding:8px !important;
+  gap:7px !important;
+  background:linear-gradient(180deg, var(--card), var(--card-tint));
+}
+.pickerCard__head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:8px;
+}
+.pickerCard__head strong{
+  font-size:15px;
+  line-height:1.15;
+  font-weight:950;
+}
+.pickerCard__sub{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.15;
+  font-weight:750;
+}
+.pickerStats{
+  display:grid;
+  grid-template-columns:repeat(5, minmax(0,1fr));
+  gap:4px;
+}
+.pickerStat{
+  min-width:0;
+  padding:4px 3px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  text-align:center;
+  background:rgba(255,255,255,0.20);
+}
+html:not(.theme--light) .pickerStat{
+  background:rgba(255,255,255,0.04);
+}
+.pickerStat--price{
+  background:rgba(38,153,96,0.11);
+  border-color:rgba(38,153,96,0.24);
+}
+html:not(.theme--light) .pickerStat--price{
+  background:rgba(60,185,120,0.13);
+  border-color:rgba(60,185,120,0.26);
+}
+.pickerStat__label{
+  min-height:13px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--muted);
+  font-size:7.5px;
+  line-height:1.05;
+  font-weight:800;
+}
+.pickerStat__value{
+  margin-top:2px;
+  color:var(--text);
+  font-size:12px;
+  line-height:1;
+  font-weight:950;
+  white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.pickerCard > .searchInput{
+  min-height:38px;
+  padding:8px 10px;
+  font-size:13px;
+}
+.pickerCard > .btn{
+  min-height:38px;
+  padding:8px 10px;
+  font-size:13px;
+}
+
+@media (min-width:701px){
+  .pickerCard{ padding:10px !important; gap:9px !important; }
+  .pickerCard__head strong{ font-size:18px; }
+  .pickerCard__sub{ font-size:12px; }
+  .pickerStat{ padding:6px 5px; border-radius:10px; }
+  .pickerStat__label{ min-height:16px; font-size:10px; }
+  .pickerStat__value{ font-size:15px; }
+}
+
+@media (max-width:380px){
+  .pickerStats{ gap:3px; }
+  .pickerStat{ padding-left:2px; padding-right:2px; }
+  .pickerStat__label{ font-size:7px; }
+  .pickerStat__value{ font-size:11px; }
+}

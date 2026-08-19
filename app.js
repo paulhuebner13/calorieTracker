@@ -121,6 +121,18 @@ function lineFull(price, kcal, protein, carbs, fat) {
   return `Preis ${euro(price)} · kcal ${Math.round(kcal)} · Protein ${round1(protein).replace(".", ",")} g · KH ${round1(carbs).replace(".", ",")} g · Fett ${round1(fat).replace(".", ",")} g ${ratiosText(price, kcal, protein)}`;
 }
 
+function pickerStatsHtml(price, kcal, protein, carbs, fat) {
+  return `
+    <div class="pickerStats">
+      <div class="pickerStat pickerStat--price"><div class="pickerStat__label">${escapeHtml(t("priceLabel"))}</div><div class="pickerStat__value">${escapeHtml(euro(price))}</div></div>
+      <div class="pickerStat itemStat--kcal"><div class="pickerStat__label">kcal</div><div class="pickerStat__value">${escapeHtml(String(Math.round(kcal)))}</div></div>
+      <div class="pickerStat itemStat--protein"><div class="pickerStat__label">${escapeHtml(t("proteinLabel"))}</div><div class="pickerStat__value">${escapeHtml(round1(protein).replace(".", ","))} g</div></div>
+      <div class="pickerStat itemStat--carbs"><div class="pickerStat__label">${escapeHtml(t("carbsLabel"))}</div><div class="pickerStat__value">${escapeHtml(round1(carbs).replace(".", ","))} g</div></div>
+      <div class="pickerStat itemStat--fat"><div class="pickerStat__label">${escapeHtml(t("fatLabel"))}</div><div class="pickerStat__value">${escapeHtml(round1(fat).replace(".", ","))} g</div></div>
+    </div>
+  `;
+}
+
 function itemStatsHtml(price, kcal, protein, carbs, fat) {
   const p100prot = metricP100prot(price, protein);
   const p100kcal = metricP100kcal(price, kcal);
@@ -148,10 +160,10 @@ function itemStatsHtml(price, kcal, protein, carbs, fat) {
 
   return `
     <div class="itemStats itemStats--main">
-      <div class="itemStat"><div class="itemStat__label">kcal</div><div class="itemStat__value">${escapeHtml(String(Math.round(kcal)))}</div></div>
-      <div class="itemStat"><div class="itemStat__label">${escapeHtml(t("proteinLabel"))}</div><div class="itemStat__value">${escapeHtml(round1(protein).replace(".", ","))} g</div></div>
-      <div class="itemStat"><div class="itemStat__label">${escapeHtml(t("carbsLabel"))}</div><div class="itemStat__value">${escapeHtml(round1(carbs).replace(".", ","))} g</div></div>
-      <div class="itemStat"><div class="itemStat__label">${escapeHtml(t("fatLabel"))}</div><div class="itemStat__value">${escapeHtml(round1(fat).replace(".", ","))} g</div></div>
+      <div class="itemStat itemStat--kcal"><div class="itemStat__label">kcal</div><div class="itemStat__value">${escapeHtml(String(Math.round(kcal)))}</div></div>
+      <div class="itemStat itemStat--protein"><div class="itemStat__label">${escapeHtml(t("proteinLabel"))}</div><div class="itemStat__value">${escapeHtml(round1(protein).replace(".", ","))} g</div></div>
+      <div class="itemStat itemStat--carbs"><div class="itemStat__label">${escapeHtml(t("carbsLabel"))}</div><div class="itemStat__value">${escapeHtml(round1(carbs).replace(".", ","))} g</div></div>
+      <div class="itemStat itemStat--fat"><div class="itemStat__label">${escapeHtml(t("fatLabel"))}</div><div class="itemStat__value">${escapeHtml(round1(fat).replace(".", ","))} g</div></div>
     </div>
     <div class="itemStats itemStats--ratios">
       <div class="itemStat"><div class="itemStat__label">${escapeHtml(t("ratioProteinLabel"))}</div><div class="itemStat__value" style="color:${escapeHtml(p100protColor)}">${escapeHtml(ratioValue(p100prot))}</div>${reference(refP100prot)}</div>
@@ -1117,15 +1129,15 @@ search.placeholder = t("searchPlaceholder");
         const row = document.createElement("div");
         row.className = "modalRow";
 
+        row.classList.add("pickerCard");
         row.innerHTML = `
-          <div class="row row--space">
+          <div class="pickerCard__head">
             <div>
               <strong>${escapeHtml(ing.name)}</strong>
-              <div class="item__sub">${escapeHtml(ing.brand || "")}</div>
+              ${ing.brand ? `<div class="pickerCard__sub">${escapeHtml(ing.brand)}</div>` : ""}
             </div>
-            <div class="item__right">${escapeHtml(unitLabel(ing.unitType))}</div>
           </div>
-          <div class="item__sub">${escapeHtml(lineFull(ing.price, ing.kcal, ing.protein, ing.carbs, ing.fat))}</div>
+          ${pickerStatsHtml(ing.price, ing.kcal, ing.protein, ing.carbs, ing.fat)}
         `;
 
         const amount = document.createElement("input");
@@ -1452,15 +1464,15 @@ search.placeholder = t("searchPlaceholder");
         const row = document.createElement("div");
         row.className = "modalRow";
 
+        row.classList.add("pickerCard");
         row.innerHTML = `
-          <div class="row row--space">
+          <div class="pickerCard__head">
             <div>
               <strong>${escapeHtml(ing.name)}</strong>
-              <div class="item__sub">${escapeHtml(ing.brand || "")}</div>
+              ${ing.brand ? `<div class="pickerCard__sub">${escapeHtml(ing.brand)}</div>` : ""}
             </div>
-            <div class="item__right">${escapeHtml(unitLabel(ing.unitType))}</div>
           </div>
-          <div class="item__sub">${escapeHtml(lineFull(ing.price, ing.kcal, ing.protein, ing.carbs, ing.fat))}</div>
+          ${pickerStatsHtml(ing.price, ing.kcal, ing.protein, ing.carbs, ing.fat)}
         `;
 
         const amount = document.createElement("input");
@@ -1537,14 +1549,12 @@ function openRecipePickerForDay(mealKey, onDone) {
 
         const totals = calcRecipeTotals(r); // <-- NICHT "t" nennen!
 
+        row.classList.add("pickerCard");
         row.innerHTML = `
-          <div class="row row--space">
-            <div>
-              <strong>${escapeHtml(r.name)}</strong>
-              <div class="item__sub">${escapeHtml(lineFull(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat))}</div>
-            </div>
-            <div class="item__right">${escapeHtml(euro(totals.price))}</div>
+          <div class="pickerCard__head">
+            <strong>${escapeHtml(r.name)}</strong>
           </div>
+          ${pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
         `;
 
         const factor = document.createElement("input");
@@ -1988,7 +1998,6 @@ function renderRecipes() {
       <div class="item__top">
         <div class="item__heading">
           <div class="item__title">${escapeHtml(r.name)}</div>
-          <div class="item__sub">${r.items.length} ${escapeHtml(t("ingredientsCountLabel"))}</div>
         </div>
         <div class="item__price">${escapeHtml(euro(totals.price))}</div>
       </div>
