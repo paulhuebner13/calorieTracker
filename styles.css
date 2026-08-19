@@ -708,3 +708,261 @@ html:not(.theme--light) .tabBtn{ color:rgba(242,244,248,0.66); }
     white-space:nowrap;
   }
 }
+
+/* ===== UI refresh: structured cards, colored daily metrics, progress bars ===== */
+.sectionTitle{
+  text-align:center;
+  width:100%;
+  margin:2px 0 12px;
+  font-size:20px;
+}
+
+.createBottomBtn{
+  width:100%;
+  margin-top:12px;
+}
+
+/* Daily headline cards */
+.metric,
+.miniMetric{
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+
+.metric--kcal{ --metric-accent:#4f8fe6; background:rgba(79,143,230,0.13); border-color:rgba(79,143,230,0.30); }
+.metric--protein{ --metric-accent:#d5a31a; background:rgba(213,163,26,0.13); border-color:rgba(213,163,26,0.30); }
+.metric--price{ --metric-accent:#22a06b; background:rgba(34,160,107,0.13); border-color:rgba(34,160,107,0.30); }
+.miniMetric--carbs{ --metric-accent:#b86b2b; background:rgba(184,107,43,0.13); border-color:rgba(184,107,43,0.30); }
+.miniMetric--fat{ --metric-accent:#d45b73; background:rgba(212,91,115,0.13); border-color:rgba(212,91,115,0.30); }
+
+html:not(.theme--light) .metric--kcal{ background:rgba(79,143,230,0.17); border-color:rgba(137,199,255,0.32); }
+html:not(.theme--light) .metric--protein{ background:rgba(213,163,26,0.16); border-color:rgba(244,196,74,0.32); }
+html:not(.theme--light) .metric--price{ background:rgba(34,160,107,0.16); border-color:rgba(70,190,130,0.32); }
+html:not(.theme--light) .miniMetric--carbs{ background:rgba(184,107,43,0.17); border-color:rgba(218,143,74,0.32); }
+html:not(.theme--light) .miniMetric--fat{ background:rgba(212,91,115,0.17); border-color:rgba(235,118,143,0.32); }
+
+.metric__label,
+.miniMetric__label{
+  text-align:center;
+}
+
+.metric__value{
+  font-size:24px;
+  margin-top:8px;
+}
+.metric__sub{
+  font-size:13px;
+  margin-top:6px;
+}
+.miniMetric__value{
+  font-size:22px;
+  margin-top:8px;
+}
+.miniMetric__sub{
+  font-size:13px;
+  margin-top:6px;
+}
+
+.metric__value,
+.metric__sub,
+.miniMetric__value,
+.miniMetric__sub{
+  font-variant-numeric:tabular-nums;
+}
+
+.metric__sub,
+.miniMetric__sub{
+  color:var(--text);
+  opacity:0.82;
+}
+
+.metricProgress{
+  --progress-fill:0%;
+  --goal-pos:100%;
+  height:6px;
+  margin-top:9px;
+  border-radius:999px;
+  position:relative;
+  overflow:hidden;
+  background:rgba(11,19,32,0.10);
+}
+html:not(.theme--light) .metricProgress{ background:rgba(255,255,255,0.13); }
+
+.metricProgress__fill{
+  position:absolute;
+  inset:0 auto 0 0;
+  width:var(--progress-fill);
+  border-radius:inherit;
+  background:var(--metric-accent, var(--accent));
+  transition:width 0.22s ease;
+}
+
+.metricProgress__goal{
+  display:none;
+  position:absolute;
+  left:var(--goal-pos);
+  top:-2px;
+  bottom:-2px;
+  width:2px;
+  transform:translateX(-1px);
+  background:var(--text);
+  border-radius:999px;
+  opacity:0.9;
+}
+.metricProgress--over .metricProgress__goal{ display:block; }
+
+/* Ingredient / recipe cards */
+.item{
+  gap:10px;
+}
+.item__top{
+  align-items:flex-start;
+}
+.item__heading{
+  min-width:0;
+  flex:1;
+}
+.item__price{
+  flex:0 0 auto;
+  text-align:right;
+  font-size:15px;
+  line-height:1.15;
+  font-weight:950;
+  color:var(--text);
+  white-space:nowrap;
+}
+.item__unit{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:800;
+}
+.itemStats{
+  display:grid;
+  gap:6px;
+}
+.itemStats--main{
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+}
+.itemStats--ratios{
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+}
+.itemStat{
+  min-width:0;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:7px 6px;
+  background:rgba(255,255,255,0.28);
+  text-align:center;
+}
+html:not(.theme--light) .itemStat{
+  background:rgba(255,255,255,0.05);
+}
+.itemStat__label{
+  min-height:22px;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.15;
+  font-weight:800;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+}
+.itemStat__value{
+  margin-top:5px;
+  color:var(--text);
+  font-size:14px;
+  line-height:1;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.itemStat__reference{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:8px;
+  line-height:1;
+  font-weight:750;
+  white-space:nowrap;
+}
+
+.mealModalActions{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:8px;
+}
+.mealModalActions .btn{ width:100%; }
+
+@media (min-width:701px){
+  .sectionTitle{ font-size:24px; margin-bottom:16px; }
+  .metric__value{ font-size:38px; }
+  .metric__sub{ font-size:16px; }
+  .miniMetric__value{ font-size:28px; }
+  .miniMetric__sub{ font-size:15px; }
+  .metricProgress{ height:8px; margin-top:12px; }
+  .item__price{ font-size:20px; }
+  .item__unit{ font-size:12px; }
+  .itemStats{ gap:10px; }
+  .itemStat{ padding:10px 8px; border-radius:13px; }
+  .itemStat__label{ min-height:30px; font-size:12px; }
+  .itemStat__value{ font-size:19px; margin-top:7px; }
+  .itemStat__reference{ font-size:10px; margin-top:5px; }
+}
+
+@media (max-width:700px){
+  .metric,
+  .miniMetric{
+    min-height:102px !important;
+    padding:9px 7px !important;
+  }
+  .metric__label,
+  .miniMetric__label{
+    font-size:10px !important;
+    line-height:1.1 !important;
+  }
+  .metric__value{
+    font-size:22px !important;
+    margin-top:7px !important;
+  }
+  .metric__sub{
+    font-size:12px !important;
+    margin-top:5px !important;
+  }
+  .miniMetric__value{
+    font-size:20px !important;
+    margin-top:7px !important;
+  }
+  .miniMetric__sub{
+    font-size:12px !important;
+    margin-top:5px !important;
+  }
+  .metricProgress{
+    height:5px;
+    margin-top:8px;
+  }
+  .miniData{
+    min-height:102px !important;
+  }
+  .item__title{ font-size:16px; }
+  .item__price{ font-size:14px; }
+  .itemStats{ gap:5px; }
+  .itemStat{ padding:7px 4px; }
+  .itemStat__label{ font-size:8px; min-height:20px; }
+  .itemStat__value{ font-size:12px; }
+  .itemStat__reference{ font-size:7px; }
+  .mealModalActions{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:380px){
+  .metric,
+  .miniMetric,
+  .miniData{ min-height:96px !important; }
+  .metric__value{ font-size:19px !important; }
+  .miniMetric__value{ font-size:18px !important; }
+  .itemStat__label{ font-size:7.5px; }
+  .itemStat__value{ font-size:11px; }
+  .itemStat__reference{ font-size:6.5px; }
+}

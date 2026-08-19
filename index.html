@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
   <title>Calorie Tracker</title>
-  <link rel="stylesheet" href="styles.css?v=mobilefix3" />
+  <link rel="stylesheet" href="styles.css?v=ui-refresh1" />
   <link rel="manifest" href="manifest.webmanifest">
 </head>
 
@@ -25,35 +25,40 @@
         <div class="row row--space row--top row--stackMobile">
           <div class="metrics3">
             <div class="metric metric--kcal">
-<div class="metric__label" id="lblKcal">kcal</div>
+              <div class="metric__label" id="lblKcal">kcal</div>
               <div class="metric__value" id="dayKcalValue">0</div>
               <div class="metric__sub" id="dayKcalPct">0%</div>
+              <div class="metricProgress" id="dayKcalProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
             </div>
             <div class="metric metric--protein">
-<div class="metric__label" id="lblProtein">Protein (g)</div>
+              <div class="metric__label" id="lblProtein">Protein (g)</div>
               <div class="metric__value" id="dayProteinValue">0</div>
               <div class="metric__sub" id="dayProteinPct">0%</div>
+              <div class="metricProgress" id="dayProteinProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
             </div>
             <div class="metric metric--price">
-<div class="metric__label" id="lblPrice">Preis (€)</div>
+              <div class="metric__label" id="lblPrice">Preis (€)</div>
               <div class="metric__value" id="dayPriceValue">0,00</div>
               <div class="metric__sub" id="dayPricePct">0%</div>
+              <div class="metricProgress" id="dayPriceProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
             </div>
           </div>
         </div>
 
         <!-- mini row: carbs/fat/data + goals moved here -->
         <div class="miniRow">
-          <div class="miniMetric">
-<div class="miniMetric__label" id="lblCarbs">Kohlenhy. (g)</div>
+          <div class="miniMetric miniMetric--carbs">
+            <div class="miniMetric__label" id="lblCarbs">Kohlenhy. (g)</div>
             <div class="miniMetric__value" id="dayCarbsValue">0,0</div>
             <div class="miniMetric__sub" id="dayCarbsPct">0%</div>
+            <div class="metricProgress" id="dayCarbsProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
           </div>
 
-          <div class="miniMetric">
-<div class="miniMetric__label" id="lblFat">Fett (g)</div>
+          <div class="miniMetric miniMetric--fat">
+            <div class="miniMetric__label" id="lblFat">Fett (g)</div>
             <div class="miniMetric__value" id="dayFatValue">0,0</div>
             <div class="miniMetric__sub" id="dayFatPct">0%</div>
+            <div class="metricProgress" id="dayFatProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
           </div>
 
           <div class="miniData">
@@ -113,10 +118,7 @@
     <!-- RECIPES TAB -->
     <section class="tab hidden" id="tab-recipes" data-tab="recipes">
       <div class="card">
-        <div class="row row--space row--stackMobile">
-          <div class="h2">Gerichte</div>
-          <button class="btn btn--big" id="btnNewRecipe">Neues Gericht</button>
-        </div>
+        <div class="sectionTitle h2">Gerichte</div>
 
         <input class="searchInput" id="recipesSearch" type="text" placeholder="Gerichte suchen..." inputmode="search" />
         <div class="sortRow">
@@ -131,16 +133,14 @@
 
         <div id="recipesList" class="list"></div>
         <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
+        <button class="btn btn--big createBottomBtn" id="btnNewRecipe">Neues Gericht</button>
       </div>
     </section>
 
     <!-- INGREDIENTS TAB -->
     <section class="tab hidden" id="tab-ingredients" data-tab="ingredients">
       <div class="card">
-        <div class="row row--space row--stackMobile">
-          <div class="h2">Zutaten</div>
-          <button class="btn btn--big" id="btnNewIngredient">Neue Zutat</button>
-        </div>
+        <div class="sectionTitle h2">Zutaten</div>
 
         <input class="searchInput" id="ingredientsSearch" type="text" placeholder="Zutaten suchen..." inputmode="search" />
         <div class="sortRow">
@@ -155,6 +155,7 @@
 
         <div id="ingredientsList" class="list"></div>
         <div class="hint" id="ingredientsEmptyHint">Noch keine Zutaten.</div>
+        <button class="btn btn--big createBottomBtn" id="btnNewIngredient">Neue Zutat</button>
       </div>
     </section>
 
@@ -188,6 +189,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=mobilefix3"></script>
+  <script src="app.js?v=ui-refresh1"></script>
 </body>
 </html>
