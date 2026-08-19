@@ -1340,3 +1340,89 @@ html:not(.theme--light) .pickerStat--price{
     font-size:12px;
   }
 }
+
+/* ===== UI refinement 6: centered day ratios and meal summaries ===== */
+
+/* Day efficiency ratios: label and value centered inside each tile. */
+.dayRatioItem{
+  text-align:center;
+  justify-items:center;
+  align-content:center;
+}
+.dayRatioLabel,
+.dayRatioValue{
+  width:100%;
+  text-align:center;
+}
+
+/* Meal heading: title centered while price stays on the right. */
+.mealTop{
+  position:relative;
+  display:grid;
+  grid-template-columns:1fr;
+  align-items:center;
+  min-height:20px;
+}
+.mealTitle{
+  width:100%;
+  text-align:center;
+  padding:0 72px;
+}
+.mealPrice{
+  position:absolute;
+  right:0;
+  top:50%;
+  transform:translateY(-50%);
+  text-align:right;
+}
+
+/* Center all nutrient text inside meal tiles. */
+.mealLine{
+  text-align:center;
+  justify-items:center;
+  align-content:center;
+}
+.mealLineLabel,
+.mealLineValue,
+.mealLinePct{
+  width:100%;
+  text-align:center;
+}
+
+/* Match the subtle nutrient colors used throughout the app. */
+.mealGrid .mealLine:nth-child(1){
+  background:rgba(79,143,230,0.13);
+  border-color:rgba(79,143,230,0.30);
+}
+.mealGrid .mealLine:nth-child(2){
+  background:rgba(213,163,26,0.13);
+  border-color:rgba(213,163,26,0.30);
+}
+.mealGrid .mealLine:nth-child(3){
+  background:rgba(184,107,43,0.13);
+  border-color:rgba(184,107,43,0.30);
+}
+.mealGrid .mealLine:nth-child(4){
+  background:rgba(212,91,115,0.13);
+  border-color:rgba(212,91,115,0.30);
+}
+html:not(.theme--light) .mealGrid .mealLine:nth-child(1){
+  background:rgba(79,143,230,0.17);
+  border-color:rgba(137,199,255,0.32);
+}
+html:not(.theme--light) .mealGrid .mealLine:nth-child(2){
+  background:rgba(213,163,26,0.16);
+  border-color:rgba(244,196,74,0.32);
+}
+html:not(.theme--light) .mealGrid .mealLine:nth-child(3){
+  background:rgba(184,107,43,0.17);
+  border-color:rgba(218,143,74,0.32);
+}
+html:not(.theme--light) .mealGrid .mealLine:nth-child(4){
+  background:rgba(212,91,115,0.17);
+  border-color:rgba(235,118,143,0.32);
+}
+
+@media (max-width:380px){
+  .mealTitle{ padding:0 58px; }
+}
