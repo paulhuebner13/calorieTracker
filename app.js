@@ -1271,59 +1271,54 @@ hint.textContent = t("noEntries");
 
       for (const entry of visible) {
         let titleText = "";
-        let subText = "";
-        let price = 0;
+        let totals = { price: 0, kcal: 0, protein: 0, carbs: 0, fat: 0 };
 
         if (entry.type === "ingredient") {
           const ing = state.ingredients.find(x => x.id === entry.refId);
           if (!ing) continue;
 
           const a = calcIngredientTotals(ing, entry.amount);
-          price = a.price;
-
           titleText = ing.name;
-          subText = `${amountLabel(ing.unitType, entry.amount)} · ${lineFull(a.price, a.kcal, a.protein, a.carbs, a.fat)}`;
+          totals = { ...a };
         } else if (entry.type === "recipe") {
           const r = state.recipes.find(x => x.id === entry.refId);
           if (!r) continue;
 
-          const totals = calcRecipeTotals(r);
+          const recipeTotals = calcRecipeTotals(r);
           const f = entry.amount;
-
-          price = totals.price * f;
-
           titleText = r.name;
-          subText = `${t("factorLabel")} ${f} · ${lineFull(price, totals.kcal * f, totals.protein * f, totals.carbs * f, totals.fat * f)}`;
+          totals = {
+            price: recipeTotals.price * f,
+            kcal: recipeTotals.kcal * f,
+            protein: recipeTotals.protein * f,
+            carbs: recipeTotals.carbs * f,
+            fat: recipeTotals.fat * f
+          };
         } else if (entry.type === "manual") {
-          price = Number(entry.price) || 0;
           titleText = (entry.name || "").trim() || t("manualEntry");
-          subText = lineFull(
-            price,
-            Number(entry.kcal) || 0,
-            Number(entry.protein) || 0,
-            Number(entry.carbs) || 0,
-            Number(entry.fat) || 0
-          );
+          totals = {
+            price: Number(entry.price) || 0,
+            kcal: Number(entry.kcal) || 0,
+            protein: Number(entry.protein) || 0,
+            carbs: Number(entry.carbs) || 0,
+            fat: Number(entry.fat) || 0
+          };
         } else {
           continue;
         }
 
         const row = document.createElement("div");
-        row.className = "item";
-        row.style.cursor = "default";
+        row.className = "modalRow pickerCard mealEntryCard";
 
         row.innerHTML = `
-          <div class="item__top">
-            <div>
-              <div class="item__title">${escapeHtml(titleText)}</div>
-              <div class="item__sub">${escapeHtml(subText)}</div>
-            </div>
-            <div class="item__right">${escapeHtml(euro(price))}</div>
+          <div class="pickerCard__head">
+            <strong>${escapeHtml(titleText)}</strong>
           </div>
+          ${pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
         `;
 
         const btnDel = document.createElement("button");
-        btnDel.className = "btn btn--danger";
+        btnDel.className = "btn btn--danger mealEntryDelete";
         btnDel.type = "button";
         btnDel.textContent = "Löschen";
         btnDel.addEventListener("click", () => {

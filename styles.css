@@ -1320,3 +1320,23 @@ html:not(.theme--light) .pickerStat--price{
   .pickerStat__label{ font-size:7px; }
   .pickerStat__value{ font-size:11px; }
 }
+
+/* Already-added meal entries use the same minimal visual language as picker cards. */
+.mealEntryCard{
+  cursor:default;
+}
+.mealEntryCard > .mealEntryDelete{
+  justify-self:end;
+  min-height:30px;
+  padding:5px 9px;
+  border-radius:9px;
+  font-size:10px;
+  box-shadow:none;
+}
+@media (min-width:701px){
+  .mealEntryCard > .mealEntryDelete{
+    min-height:34px;
+    padding:6px 11px;
+    font-size:12px;
+  }
+}
