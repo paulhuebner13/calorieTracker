@@ -371,6 +371,17 @@ const redObj = colorToObj(red);
 /* ===== DOM helpers ===== */
 const $ = (sel) => document.querySelector(sel);
 
+function syncBottomAreaHeight() {
+  const bottomArea = document.querySelector(".bottomArea");
+  if (!bottomArea) return;
+  const h = Math.ceil(bottomArea.getBoundingClientRect().height);
+  if (h > 0) document.documentElement.style.setProperty("--bottom-area-height", `${h}px`);
+}
+
+window.addEventListener("resize", syncBottomAreaHeight);
+window.addEventListener("orientationchange", syncBottomAreaHeight);
+requestAnimationFrame(syncBottomAreaHeight);
+
 /* Tabs */
 const tabButtons = Array.from(document.querySelectorAll(".tabBtn"));
 const tabs = {
@@ -387,6 +398,7 @@ function setTab(name) {
     btn.classList.toggle("tabBtn--active", btn.dataset.nav === name);
   }
   renderAll();
+  requestAnimationFrame(syncBottomAreaHeight);
 }
 
 tabButtons.forEach(btn => {
@@ -2196,7 +2208,11 @@ function applyLanguage(lang) {
   if (elImport) elImport.textContent = t("import");
 
   const elModalClose = document.querySelector("#modalClose");
-  if (elModalClose) elModalClose.textContent = t("modalClose");
+  if (elModalClose) {
+    elModalClose.textContent = "×";
+    elModalClose.setAttribute("aria-label", t("modalClose"));
+    elModalClose.setAttribute("title", t("modalClose"));
+  }
 
   // Tab buttons (bottom nav)
   const tabBtns = Array.from(document.querySelectorAll(".tabBtn"));

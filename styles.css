@@ -412,15 +412,65 @@ html:not(.theme--light) .modal{ background:rgba(0,0,0,0.58); }
   background:linear-gradient(180deg, var(--card), var(--card-tint));
   border:1px solid var(--line);
   border-radius:18px 18px 0 0;
-  padding:10px;
+  padding:0;
   max-height:88vh;
-  overflow:auto;
+  overflow:hidden;
   color:var(--text);
   box-shadow:var(--shadow);
   backdrop-filter:blur(12px);
   -webkit-backdrop-filter:blur(12px);
+  display:flex;
+  flex-direction:column;
 }
-.modal__content{ margin-top:10px; display:grid; gap:10px; }
+.modal__header{
+  position:relative;
+  flex:0 0 auto;
+  min-height:50px;
+  display:grid;
+  place-items:center;
+  padding:10px 52px 8px;
+  border-bottom:1px solid var(--line);
+  background:rgba(245,247,251,0.92);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  z-index:3;
+}
+html:not(.theme--light) .modal__header{ background:rgba(11,13,18,0.92); }
+.modal__title{
+  width:100%;
+  text-align:center;
+  font-size:17px;
+  line-height:1.15;
+}
+.modal__close{
+  position:absolute;
+  right:9px;
+  top:50%;
+  transform:translateY(-50%);
+  width:36px;
+  height:36px;
+  padding:0;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:50%;
+  background:rgba(255,255,255,0.48);
+  color:var(--text);
+  box-shadow:var(--shadow-soft);
+  font:700 25px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  cursor:pointer;
+}
+html:not(.theme--light) .modal__close{ background:rgba(255,255,255,0.07); }
+.modal__close:active{ transform:translateY(-50%) scale(.96); }
+.modal__content{
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:10px;
+  display:grid;
+  gap:10px;
+}
 .modalRow{
   display:grid;
   gap:10px;
@@ -506,7 +556,11 @@ html:not(.theme--light) .tabBtn{ color:rgba(242,244,248,0.66); }
   .mealLineValue{ font-size:30px; }
   .mealRatios{ border-radius:14px; padding:10px 12px; grid-template-columns:1fr 1fr; gap:10px 14px; }
   .mealRatioValue{ font-size:14px; }
-  .modal__sheet{ padding:14px; border-radius:22px 22px 0 0; }
+  .modal__sheet{ padding:0; border-radius:22px 22px 0 0; }
+  .modal__header{ min-height:62px; padding:12px 64px 10px; }
+  .modal__title{ font-size:20px; }
+  .modal__close{ width:42px; height:42px; right:12px; font-size:28px; }
+  .modal__content{ padding:14px; }
   .modal__content{ gap:12px; margin-top:12px; }
   .modalRow{ padding:12px; border-radius:16px; gap:12px; }
   .modalRow strong{ font-size:22px; }
@@ -1006,7 +1060,7 @@ html:not(.theme--light) #tab-day > .card--hero{
   z-index:29;
   left:max(8px, calc((100vw - 980px) / 2 + 8px));
   right:max(8px, calc((100vw - 980px) / 2 + 8px));
-  bottom:calc(108px + env(safe-area-inset-bottom));
+  bottom:calc(var(--bottom-area-height, 108px) + 8px);
   width:auto;
   margin:0;
   box-shadow:0 10px 26px rgba(11,19,32,0.20);
@@ -1162,7 +1216,7 @@ html:not(.theme--light) .itemStat--fat{
 
 @media (min-width:701px){
   .createBottomBtn{
-    bottom:calc(142px + env(safe-area-inset-bottom));
+    bottom:calc(var(--bottom-area-height, 142px) + 10px);
     left:max(14px, calc((100vw - 980px) / 2 + 14px));
     right:max(14px, calc((100vw - 980px) / 2 + 14px));
   }

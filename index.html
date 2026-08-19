@@ -133,8 +133,8 @@
 
         <div id="recipesList" class="list"></div>
         <div class="hint" id="recipesEmptyHint">Noch keine Gerichte.</div>
-        <button class="btn btn--big createBottomBtn" id="btnNewRecipe">Neues Gericht</button>
       </div>
+      <button class="btn btn--big createBottomBtn" id="btnNewRecipe">Neues Gericht</button>
     </section>
 
     <!-- INGREDIENTS TAB -->
@@ -155,8 +155,8 @@
 
         <div id="ingredientsList" class="list"></div>
         <div class="hint" id="ingredientsEmptyHint">Noch keine Zutaten.</div>
-        <button class="btn btn--big createBottomBtn" id="btnNewIngredient">Neue Zutat</button>
       </div>
+      <button class="btn btn--big createBottomBtn" id="btnNewIngredient">Neue Zutat</button>
     </section>
 
   </main>
@@ -181,14 +181,14 @@
   <!-- Generic modal -->
   <div class="modal hidden" id="modal">
     <div class="modal__sheet">
-      <div class="row row--space row--stackMobile">
-        <div class="h2" id="modalTitle">Auswahl</div>
-        <button class="btn btn--ghost btn--big" id="modalClose">Schließen</button>
+      <div class="modal__header">
+        <div class="h2 modal__title" id="modalTitle">Auswahl</div>
+        <button class="modal__close" id="modalClose" type="button" aria-label="Schließen" title="Schließen">×</button>
       </div>
       <div class="modal__content" id="modalContent"></div>
     </div>
   </div>
 
-  <script src="app.js?v=ui-refresh2"></script>
+  <script src="app.js?v=ui-refresh4"></script>
 </body>
 </html>
