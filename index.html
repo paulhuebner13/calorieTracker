@@ -28,18 +28,21 @@
               <div class="metric__label" id="lblKcal">kcal</div>
               <div class="metric__value" id="dayKcalValue">0</div>
               <div class="metric__sub" id="dayKcalPct">0%</div>
+              <div class="metric__remaining" id="dayKcalRemaining">Noch 0 kcal</div>
               <div class="metricProgress" id="dayKcalProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
             </div>
             <div class="metric metric--protein">
               <div class="metric__label" id="lblProtein">Protein (g)</div>
               <div class="metric__value" id="dayProteinValue">0</div>
               <div class="metric__sub" id="dayProteinPct">0%</div>
+              <div class="metric__remaining" id="dayProteinRemaining">Noch 0 g</div>
               <div class="metricProgress" id="dayProteinProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
             </div>
             <div class="metric metric--price">
               <div class="metric__label" id="lblPrice">Preis (€)</div>
               <div class="metric__value" id="dayPriceValue">0,00</div>
               <div class="metric__sub" id="dayPricePct">0%</div>
+              <div class="metric__remaining" id="dayPriceRemaining">Noch 0,00 €</div>
               <div class="metricProgress" id="dayPriceProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
             </div>
           </div>
@@ -51,6 +54,7 @@
             <div class="miniMetric__label" id="lblCarbs">Kohlenhy. (g)</div>
             <div class="miniMetric__value" id="dayCarbsValue">0,0</div>
             <div class="miniMetric__sub" id="dayCarbsPct">0%</div>
+            <div class="metric__remaining" id="dayCarbsRemaining">Noch 0 g</div>
             <div class="metricProgress" id="dayCarbsProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
           </div>
 
@@ -58,6 +62,7 @@
             <div class="miniMetric__label" id="lblFat">Fett (g)</div>
             <div class="miniMetric__value" id="dayFatValue">0,0</div>
             <div class="miniMetric__sub" id="dayFatPct">0%</div>
+            <div class="metric__remaining" id="dayFatRemaining">Noch 0 g</div>
             <div class="metricProgress" id="dayFatProgress"><div class="metricProgress__fill"></div><div class="metricProgress__goal"></div></div>
           </div>
 
@@ -167,6 +172,7 @@
     <div class="dateBar">
       <button class="dateNavBtn" id="btnPrevDay" aria-label="Vorheriger Tag">‹</button>
       <div class="dateLabel" id="dateLabel">Heute</div>
+      <button class="dateNavBtn calendarBtn" id="btnCalendar" type="button" aria-label="Kalender" title="Kalender">▦</button>
       <button class="dateNavBtn" id="btnNextDay" aria-label="Nächster Tag">›</button>
     </div>
 
@@ -189,6 +195,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=ui-refresh4"></script>
+  <script src="app.js?v=ui-refresh8"></script>
 </body>
 </html>

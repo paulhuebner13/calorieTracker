@@ -11,6 +11,9 @@ const LS_KEY = "kcal_tracker_v3";
   - recipes: { id, name, items: [{ ingredientId, amount }] }                     (amount in g/ml/pieces)
   - dayLogs: { [dateKey]: [{ id, type, refId?, amount?, meal?, name?, kcal?, protein?, carbs?, fat?, price? }] }
   - goals: { kcal, protein, price, carbs, fat }
+  - goalRelevant: { kcal, protein, price, carbs, fat } (booleans for daily completion)
+  - supplements: [{ id, name, amount, unit, relevant }]
+  - supplementLogs: { [dateKey]: [supplementId, ...] }
 
   Notes:
   - We do NOT break old imports. meal is optional and defaults to "snacks".
@@ -23,6 +26,10 @@ const MEALS = [
   { key: "snacks", labelKey: "snacks" },
   { key: "dinner", labelKey: "dinner" }
 ];
+
+const GOAL_KEYS = ["kcal", "protein", "price", "carbs", "fat"];
+const DEFAULT_GOALS = { kcal: 2500, protein: 160, price: 15, carbs: 300, fat: 80 };
+const DEFAULT_GOAL_RELEVANT = { kcal: true, protein: true, price: true, carbs: true, fat: true };
 
 
 function uid() {
@@ -213,31 +220,56 @@ function formatDateKeyGerman(key) {
 }
 
 /* ===== State load/save with backward compatible import ===== */
+function normalizeStateObject(s) {
+  const obj = (s && typeof s === "object") ? s : {};
+  if (!Array.isArray(obj.ingredients)) obj.ingredients = [];
+  if (!Array.isArray(obj.recipes)) obj.recipes = [];
+  if (!obj.dayLogs || typeof obj.dayLogs !== "object") obj.dayLogs = {};
+  if (!obj.goals || typeof obj.goals !== "object") obj.goals = { ...DEFAULT_GOALS };
+
+  for (const key of GOAL_KEYS) {
+    obj.goals[key] = Number.isFinite(obj.goals[key]) ? obj.goals[key] : DEFAULT_GOALS[key];
+  }
+
+  if (!obj.goalRelevant || typeof obj.goalRelevant !== "object") obj.goalRelevant = { ...DEFAULT_GOAL_RELEVANT };
+  for (const key of GOAL_KEYS) {
+    obj.goalRelevant[key] = (typeof obj.goalRelevant[key] === "boolean") ? obj.goalRelevant[key] : DEFAULT_GOAL_RELEVANT[key];
+  }
+
+  if (!Array.isArray(obj.supplements)) obj.supplements = [];
+  obj.supplements = obj.supplements.map(sup => ({
+    id: sup?.id || uid(),
+    name: String(sup?.name || "").trim(),
+    amount: Number.isFinite(Number(sup?.amount)) ? Number(sup.amount) : 1,
+    unit: sup?.unit === "g" ? "g" : "piece",
+    relevant: Boolean(sup?.relevant),
+    createdOn: /^\d{4}-\d{2}-\d{2}$/.test(String(sup?.createdOn || "")) ? String(sup.createdOn) : null
+  })).filter(sup => sup.name);
+
+  if (!obj.supplementLogs || typeof obj.supplementLogs !== "object") obj.supplementLogs = {};
+  for (const [key, ids] of Object.entries(obj.supplementLogs)) {
+    obj.supplementLogs[key] = Array.isArray(ids) ? [...new Set(ids.map(String))] : [];
+  }
+
+  return obj;
+}
+
 function loadState() {
   const raw = localStorage.getItem(LS_KEY);
-  const defaults = { kcal: 2500, protein: 160, price: 15, carbs: 300, fat: 80 };
-
   if (!raw) {
-    return { ingredients: [], recipes: [], dayLogs: {}, goals: { ...defaults } };
+    return normalizeStateObject({
+      ingredients: [], recipes: [], dayLogs: {}, goals: { ...DEFAULT_GOALS },
+      goalRelevant: { ...DEFAULT_GOAL_RELEVANT }, supplements: [], supplementLogs: {}
+    });
   }
 
   try {
-    const s = JSON.parse(raw);
-    if (!Array.isArray(s.ingredients)) s.ingredients = [];
-    if (!Array.isArray(s.recipes)) s.recipes = [];
-    if (!s.dayLogs || typeof s.dayLogs !== "object") s.dayLogs = {};
-    if (!s.goals || typeof s.goals !== "object") s.goals = { ...defaults };
-
-    // Ensure goals contain all fields (backward compatible)
-    s.goals.kcal = Number.isFinite(s.goals.kcal) ? s.goals.kcal : defaults.kcal;
-    s.goals.protein = Number.isFinite(s.goals.protein) ? s.goals.protein : defaults.protein;
-    s.goals.price = Number.isFinite(s.goals.price) ? s.goals.price : defaults.price;
-    s.goals.carbs = Number.isFinite(s.goals.carbs) ? s.goals.carbs : defaults.carbs;
-    s.goals.fat = Number.isFinite(s.goals.fat) ? s.goals.fat : defaults.fat;
-
-    return s;
+    return normalizeStateObject(JSON.parse(raw));
   } catch {
-    return { ingredients: [], recipes: [], dayLogs: {}, goals: { ...defaults } };
+    return normalizeStateObject({
+      ingredients: [], recipes: [], dayLogs: {}, goals: { ...DEFAULT_GOALS },
+      goalRelevant: { ...DEFAULT_GOAL_RELEVANT }, supplements: [], supplementLogs: {}
+    });
   }
 }
 
@@ -264,6 +296,34 @@ function normalizeEntryMeal(entry) {
   const m = entry && entry.meal;
   if (isValidMeal(m)) return m;
   return "snacks";
+}
+
+
+function getSupplementLog(key) {
+  if (!state.supplementLogs[key]) state.supplementLogs[key] = [];
+  return state.supplementLogs[key];
+}
+
+function isSupplementTaken(supplementId, key = selectedDayKey) {
+  const ids = state.supplementLogs?.[key];
+  return Array.isArray(ids) && ids.includes(String(supplementId));
+}
+
+function toggleSupplementTaken(supplementId, key = selectedDayKey) {
+  const id = String(supplementId);
+  const current = getSupplementLog(key);
+  state.supplementLogs[key] = current.includes(id)
+    ? current.filter(x => x !== id)
+    : [...current, id];
+  saveState();
+}
+
+function supplementAmountText(sup) {
+  const amount = Number(sup.amount) || 0;
+  const clean = String(Math.round(amount * 100) / 100).replace(".", ",");
+  if (sup.unit === "g") return `${clean} g`;
+  if (loadLanguage() === "en") return `${clean} ${Math.abs(amount - 1) < 0.0001 ? "piece" : "pieces"}`;
+  return `${clean} ${Math.abs(amount - 1) < 0.0001 ? "Stück" : "Stück"}`;
 }
 
 /* ===== Calc ===== */
@@ -431,18 +491,22 @@ function closeModal() {
 /* ===== Date navigation bar ===== */
 const btnPrevDay = $("#btnPrevDay");
 const btnNextDay = $("#btnNextDay");
+const btnCalendar = $("#btnCalendar");
 const dateLabel = $("#dateLabel");
 
 function getStoredDayKeysSorted() {
-  const keys = Object.keys(state.dayLogs || {});
-  keys.sort();
-  return keys;
+  const keys = new Set([
+    ...Object.keys(state.dayLogs || {}),
+    ...Object.keys(state.supplementLogs || {})
+  ]);
+  return [...keys].sort();
 }
 
 function getOldestStoredDayKeyOrNull() {
   const keys = getStoredDayKeysSorted().filter(k => {
-    const arr = state.dayLogs[k];
-    return Array.isArray(arr) && arr.length > 0;
+    const food = state.dayLogs?.[k];
+    const supplements = state.supplementLogs?.[k];
+    return (Array.isArray(food) && food.length > 0) || (Array.isArray(supplements) && supplements.length > 0);
   });
   if (keys.length === 0) return null;
   return keys[0];
@@ -494,6 +558,113 @@ btnNextDay.addEventListener("click", () => {
   renderAll();
 });
 
+
+function startOfWeekMonday(date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function endOfWeekSunday(date) {
+  return addDays(startOfWeekMonday(date), 6);
+}
+
+function calendarDayStatus(key) {
+  const todayKey = nowDayKeyRollover0430();
+  if (key > todayKey) return "future";
+  if (key === todayKey) return isDayGoalAchieved(key) ? "achieved" : "today-open";
+  return isDayGoalAchieved(key) ? "achieved" : "missed";
+}
+
+function formatShortDay(d) {
+  return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.`;
+}
+
+function weekNumberISO(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+function openCalendarModal() {
+  openModal(t("calendarTitle"), (container) => {
+    const legend = document.createElement("div");
+    legend.className = "calendarLegend";
+    legend.innerHTML = `
+      <span><i class="calendarDot calendarDot--achieved"></i>${escapeHtml(t("calendarAchieved"))}</span>
+      <span><i class="calendarDot calendarDot--missed"></i>${escapeHtml(t("calendarMissed"))}</span>
+      <span><i class="calendarDot calendarDot--today"></i>${escapeHtml(t("calendarTodayOpen"))}</span>
+      <span><i class="calendarDot calendarDot--future"></i>${escapeHtml(t("calendarFuture"))}</span>
+    `;
+    container.appendChild(legend);
+
+    const scroll = document.createElement("div");
+    scroll.className = "calendarScroll";
+    container.appendChild(scroll);
+
+    const today = dateFromDayKey(nowDayKeyRollover0430());
+    const storedKeys = getStoredDayKeysSorted();
+    const storedYears = storedKeys.map(k => Number(String(k).slice(0, 4))).filter(Number.isFinite);
+    const firstYear = storedYears.length ? Math.min(today.getFullYear(), ...storedYears) : today.getFullYear();
+    const start = startOfWeekMonday(new Date(firstYear, 0, 1));
+    const end = endOfWeekSunday(new Date(today.getFullYear(), 11, 31));
+    const currentWeekKey = dayKeyFromDate(startOfWeekMonday(today));
+
+    const weekdayLabels = loadLanguage() === "en"
+      ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+      : ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+
+    for (let weekStart = new Date(start); weekStart <= end; weekStart = addDays(weekStart, 7)) {
+      const week = document.createElement("div");
+      const weekKey = dayKeyFromDate(weekStart);
+      week.className = "calendarWeek" + (weekKey === currentWeekKey ? " calendarWeek--current" : "");
+
+      const weekEnd = addDays(weekStart, 6);
+      week.innerHTML = `<div class="calendarWeek__title">${escapeHtml(t("weekShort"))} ${weekNumberISO(weekStart)} · ${formatShortDay(weekStart)}–${formatShortDay(weekEnd)}</div>`;
+      const days = document.createElement("div");
+      days.className = "calendarDays";
+
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(weekStart, i);
+        const key = dayKeyFromDate(d);
+        const status = calendarDayStatus(key);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `calendarDay calendarDay--${status}` + (key === selectedDayKey ? " calendarDay--selected" : "");
+        btn.disabled = status === "future";
+        btn.innerHTML = `<span class="calendarDay__weekday">${weekdayLabels[i]}</span><span class="calendarDay__date">${d.getDate()}</span>`;
+        if (!btn.disabled) {
+          btn.addEventListener("click", () => {
+            selectedDayKey = key;
+            closeModal();
+            setTab("day");
+            renderAll();
+          });
+        }
+        days.appendChild(btn);
+      }
+      week.appendChild(days);
+      scroll.appendChild(week);
+    }
+
+    requestAnimationFrame(() => {
+      const current = scroll.querySelector(".calendarWeek--current");
+      if (current) {
+        const scroller = modalContent;
+        const sr = scroller.getBoundingClientRect();
+        const cr = current.getBoundingClientRect();
+        const currentTop = cr.top - sr.top + scroller.scrollTop;
+        scroller.scrollTop = Math.max(0, currentTop - (scroller.clientHeight - cr.height) / 2);
+      }
+    });
+  });
+}
+
+if (btnCalendar) btnCalendar.addEventListener("click", openCalendarModal);
+
 /* ===== Export / Import ===== */
 const btnExport = $("#btnExport");
 const btnImport = $("#btnImport");
@@ -501,7 +672,7 @@ const importFile = $("#importFile");
 
 btnExport.addEventListener("click", () => {
   // Add optional schemaVersion, but keep structure identical so old importers still work
-  const payload = { ...state, schemaVersion: 3 };
+  const payload = { ...state, schemaVersion: 4 };
   const data = JSON.stringify(payload, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -534,15 +705,7 @@ importFile.addEventListener("change", async () => {
     if (!parsed.dayLogs || typeof parsed.dayLogs !== "object") throw new Error("Missing dayLogs");
     if (!parsed.goals || typeof parsed.goals !== "object") throw new Error("Missing goals");
 
-    // Backward compatible: ensure goals contain carbs/fat
-    const defaults = { kcal: 2500, protein: 160, price: 15, carbs: 300, fat: 80 };
-    parsed.goals.kcal = Number.isFinite(parsed.goals.kcal) ? parsed.goals.kcal : defaults.kcal;
-    parsed.goals.protein = Number.isFinite(parsed.goals.protein) ? parsed.goals.protein : defaults.protein;
-    parsed.goals.price = Number.isFinite(parsed.goals.price) ? parsed.goals.price : defaults.price;
-    parsed.goals.carbs = Number.isFinite(parsed.goals.carbs) ? parsed.goals.carbs : defaults.carbs;
-    parsed.goals.fat = Number.isFinite(parsed.goals.fat) ? parsed.goals.fat : defaults.fat;
-
-    state = parsed;
+    state = normalizeStateObject(parsed);
     saveState();
 
     // After import: keep selected day sensible
@@ -562,66 +725,54 @@ const btnOpenGoals = $("#btnOpenGoals");
 
 btnOpenGoals.addEventListener("click", () => {
   openModal(t("editGoals"), (container) => {
-
     const form = document.createElement("form");
-    form.className = "modalRow";
+    form.className = "goalEditor";
 
-    form.innerHTML = `
-      <label class="field">
-        <span>kcal Ziel pro Tag</span>
-        <input class="searchInput" type="text" inputmode="decimal" id="mGoalKcal" placeholder="z.B. 2500">
-      </label>
-      <label class="field">
-        <span>Protein Ziel pro Tag (g)</span>
-        <input class="searchInput" type="text" inputmode="decimal" id="mGoalProtein" placeholder="z.B. 160">
-      </label>
-      <label class="field">
-        <span>Preis Ziel pro Tag (€)</span>
-        <input class="searchInput" type="text" inputmode="decimal" id="mGoalPrice" placeholder="z.B. 15">
-      </label>
-      <label class="field">
-        <span>Kohlenhydrate Ziel pro Tag (g)</span>
-        <input class="searchInput" type="text" inputmode="decimal" id="mGoalCarbs" placeholder="z.B. 300">
-      </label>
-      <label class="field">
-        <span>Fett Ziel pro Tag (g)</span>
-        <input class="searchInput" type="text" inputmode="decimal" id="mGoalFat" placeholder="z.B. 80">
-      </label>
-      <div class="row">
-        <button class="btn" type="submit">Speichern</button>
+    const fields = [
+      { key: "kcal", label: t("goalKcal"), placeholder: "2500" },
+      { key: "protein", label: t("goalProtein"), placeholder: "160" },
+      { key: "price", label: t("goalPrice"), placeholder: "15" },
+      { key: "carbs", label: t("goalCarbs"), placeholder: "300" },
+      { key: "fat", label: t("goalFat"), placeholder: "80" }
+    ];
+
+    form.innerHTML = fields.map(f => `
+      <div class="goalEditorRow">
+        <label class="goalEditorCheck" title="${escapeHtml(t("goalRelevantHint"))}">
+          <input type="checkbox" data-relevant="${f.key}">
+          <span>${escapeHtml(t("goalRelevant"))}</span>
+        </label>
+        <label class="field goalEditorField">
+          <span>${escapeHtml(f.label)}</span>
+          <input class="searchInput" type="text" inputmode="decimal" data-goal="${f.key}" placeholder="${escapeHtml(f.placeholder)}">
+        </label>
       </div>
-    `;
+    `).join("") + `<button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
 
     container.appendChild(form);
 
-    const kcalEl = form.querySelector("#mGoalKcal");
-    const protEl = form.querySelector("#mGoalProtein");
-    const priceEl = form.querySelector("#mGoalPrice");
-    const carbsEl = form.querySelector("#mGoalCarbs");
-    const fatEl = form.querySelector("#mGoalFat");
-
-    kcalEl.value = String(state.goals.kcal ?? "");
-    protEl.value = String(state.goals.protein ?? "");
-    priceEl.value = String(state.goals.price ?? "");
-    carbsEl.value = String(state.goals.carbs ?? "");
-    fatEl.value = String(state.goals.fat ?? "");
+    for (const f of fields) {
+      form.querySelector(`[data-goal="${f.key}"]`).value = String(state.goals[f.key] ?? "");
+      form.querySelector(`[data-relevant="${f.key}"]`).checked = Boolean(state.goalRelevant[f.key]);
+    }
 
     form.addEventListener("submit", (e) => {
       e.preventDefault();
+      const nextGoals = {};
+      const nextRelevant = {};
 
-      const kcal = parseNumber(kcalEl.value);
-      const protein = parseNumber(protEl.value);
-      const price = parseNumber(priceEl.value);
-      const carbs = parseNumber(carbsEl.value);
-      const fat = parseNumber(fatEl.value);
+      for (const f of fields) {
+        const value = parseNumber(form.querySelector(`[data-goal="${f.key}"]`).value);
+        if (!Number.isFinite(value) || value <= 0) {
+          alert(`${f.label}: ${t("goalPositive")}`);
+          return;
+        }
+        nextGoals[f.key] = value;
+        nextRelevant[f.key] = form.querySelector(`[data-relevant="${f.key}"]`).checked;
+      }
 
-      if (!Number.isFinite(kcal) || kcal <= 0) return alert("kcal Ziel muss > 0 sein.");
-      if (!Number.isFinite(protein) || protein <= 0) return alert("Protein Ziel muss > 0 sein.");
-      if (!Number.isFinite(price) || price <= 0) return alert("Preis Ziel muss > 0 sein.");
-      if (!Number.isFinite(carbs) || carbs <= 0) return alert("KH Ziel muss > 0 sein.");
-      if (!Number.isFinite(fat) || fat <= 0) return alert("Fett Ziel muss > 0 sein.");
-
-      state.goals = { kcal, protein, price, carbs, fat };
+      state.goals = nextGoals;
+      state.goalRelevant = nextRelevant;
       saveState();
       closeModal();
       renderAll();
@@ -1205,6 +1356,12 @@ const dayCarbsPct = $("#dayCarbsPct");
 const dayFatValue = $("#dayFatValue");
 const dayFatPct = $("#dayFatPct");
 
+const dayKcalRemaining = $("#dayKcalRemaining");
+const dayProteinRemaining = $("#dayProteinRemaining");
+const dayPriceRemaining = $("#dayPriceRemaining");
+const dayCarbsRemaining = $("#dayCarbsRemaining");
+const dayFatRemaining = $("#dayFatRemaining");
+
 const dayKcalProgress = $("#dayKcalProgress");
 const dayProteinProgress = $("#dayProteinProgress");
 const dayPriceProgress = $("#dayPriceProgress");
@@ -1218,13 +1375,9 @@ const dayProtPer100kcalValue = $("#dayProtPer100kcalValue");
 
 function openMealModal(mealKey) {
   const meal = MEALS.find(m => m.key === mealKey);
-const mealLabel = meal ? t(meal.labelKey) : t("entries");
-const dateLabelText =
-  (selectedDayKey === nowDayKeyRollover0430())
-    ? t("today")
-    : formatDateKeyGerman(selectedDayKey);
-
-const title = `${mealLabel} · ${dateLabelText}`;
+  const mealLabel = meal ? t(meal.labelKey) : t("entries");
+  const dateLabelText = (selectedDayKey === nowDayKeyRollover0430()) ? t("today") : formatDateKeyGerman(selectedDayKey);
+  const title = `${mealLabel} · ${dateLabelText}`;
 
   openModal(title, (container) => {
     const actions = document.createElement("div");
@@ -1234,7 +1387,6 @@ const title = `${mealLabel} · ${dateLabelText}`;
       <button class="btn btn--big" id="mAddRec">${escapeHtml(t("addRecipe"))}</button>
       <button class="btn btn--big btn--ghost" id="mAddManual">${escapeHtml(t("addManual"))}</button>
     `;
-
     container.appendChild(actions);
 
     const list = document.createElement("div");
@@ -1243,7 +1395,7 @@ const title = `${mealLabel} · ${dateLabelText}`;
 
     const hint = document.createElement("div");
     hint.className = "hint";
-hint.textContent = t("noEntries");
+    hint.textContent = t("noEntries");
     container.appendChild(hint);
 
     function getVisibleEntriesForMeal() {
@@ -1253,20 +1405,12 @@ hint.textContent = t("noEntries");
 
     function renderMealList() {
       list.innerHTML = "";
-      const entries = getVisibleEntriesForMeal();
-
-      // filter missing IDs: do not show them
-      const visible = entries.filter(entry => {
+      const visible = getVisibleEntriesForMeal().filter(entry => {
         if (entry.type === "manual") return true;
-        if (entry.type === "ingredient") {
-          return state.ingredients.some(x => x.id === entry.refId);
-        }
-        if (entry.type === "recipe") {
-          return state.recipes.some(x => x.id === entry.refId);
-        }
+        if (entry.type === "ingredient") return state.ingredients.some(x => x.id === entry.refId);
+        if (entry.type === "recipe") return state.recipes.some(x => x.id === entry.refId);
         return false;
       });
-
       hint.classList.toggle("hidden", visible.length > 0);
 
       for (const entry of visible) {
@@ -1277,65 +1421,52 @@ hint.textContent = t("noEntries");
         if (entry.type === "ingredient") {
           const ing = state.ingredients.find(x => x.id === entry.refId);
           if (!ing) continue;
-
-          const a = calcIngredientTotals(ing, entry.amount);
+          totals = calcIngredientTotals(ing, entry.amount);
           titleText = ing.name;
           amountText = amountLabel(ing.unitType, entry.amount);
-          totals = { ...a };
         } else if (entry.type === "recipe") {
           const r = state.recipes.find(x => x.id === entry.refId);
           if (!r) continue;
-
-          const recipeTotals = calcRecipeTotals(r);
-          const f = entry.amount;
+          const base = calcRecipeTotals(r);
+          const f = Number(entry.amount) || 0;
           titleText = r.name;
           const factorText = round2(f).replace(/([,.]\d*?[1-9])0+$|[,.]0+$/, "$1").replace(".", ",");
-          if (loadLanguage() === "en") {
-            amountText = `${factorText} ${Math.abs(f - 1) < 0.0001 ? "portion" : "portions"}`;
-          } else {
-            amountText = `${factorText} ${Math.abs(f - 1) < 0.0001 ? "Portion" : "Portionen"}`;
-          }
-          totals = {
-            price: recipeTotals.price * f,
-            kcal: recipeTotals.kcal * f,
-            protein: recipeTotals.protein * f,
-            carbs: recipeTotals.carbs * f,
-            fat: recipeTotals.fat * f
-          };
+          amountText = `${factorText} ${loadLanguage() === "en" ? (Math.abs(f - 1) < 0.0001 ? "portion" : "portions") : (Math.abs(f - 1) < 0.0001 ? "Portion" : "Portionen")}`;
+          totals = { price: base.price*f, kcal: base.kcal*f, protein: base.protein*f, carbs: base.carbs*f, fat: base.fat*f };
         } else if (entry.type === "manual") {
           titleText = (entry.name || "").trim() || t("manualEntry");
           totals = {
-            price: Number(entry.price) || 0,
-            kcal: Number(entry.kcal) || 0,
-            protein: Number(entry.protein) || 0,
-            carbs: Number(entry.carbs) || 0,
-            fat: Number(entry.fat) || 0
+            price: Number(entry.price) || 0, kcal: Number(entry.kcal) || 0,
+            protein: Number(entry.protein) || 0, carbs: Number(entry.carbs) || 0, fat: Number(entry.fat) || 0
           };
-        } else {
-          continue;
-        }
+        } else continue;
 
         const row = document.createElement("div");
         row.className = "modalRow pickerCard mealEntryCard";
-
         row.innerHTML = `
           <div class="pickerCard__head mealEntryHead">
             <div class="mealEntryHeading">
               <strong>${escapeHtml(titleText)}</strong>
               ${amountText ? `<div class="mealEntryAmount">${escapeHtml(amountText)}</div>` : ""}
             </div>
-            <button class="btn btn--danger mealEntryDelete" type="button">${escapeHtml(t("deleteButton"))}</button>
+            <div class="mealEntryActions">
+              <button class="btn btn--ghost mealEntryEdit" type="button">${escapeHtml(t("editButton"))}</button>
+              <button class="btn btn--danger mealEntryDelete" type="button">${escapeHtml(t("deleteButton"))}</button>
+            </div>
           </div>
           ${pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
         `;
 
-        const btnDel = row.querySelector(".mealEntryDelete");
-        btnDel.addEventListener("click", () => {
+        row.querySelector(".mealEntryDelete").addEventListener("click", () => {
           const log = getDayLog(selectedDayKey);
           state.dayLogs[selectedDayKey] = (log || []).filter(e => e.id !== entry.id);
           saveState();
           renderAll();
           renderMealList();
+        });
+
+        row.querySelector(".mealEntryEdit").addEventListener("click", () => {
+          openDayEntryEditor(entry, mealKey);
         });
 
         list.appendChild(row);
@@ -1344,43 +1475,103 @@ hint.textContent = t("noEntries");
 
     renderMealList();
 
-    const btnIng = actions.querySelector("#mAddIng");
-    const btnRec = actions.querySelector("#mAddRec");
-    const btnManual = actions.querySelector("#mAddManual");
-
-    btnIng.addEventListener("click", () => {
+    actions.querySelector("#mAddIng").addEventListener("click", () => {
       if (state.ingredients.length === 0) {
-        alert("Du brauchst zuerst Zutaten.");
-        setTab("ingredients");
-        closeModal();
-        return;
+        alert(t("needIngredientsFirst"));
+        setTab("ingredients"); closeModal(); return;
       }
-      openIngredientPickerForDay(mealKey, () => {
-        renderAll();
-        renderMealList();
-      });
+      openIngredientPickerForDay(mealKey, () => { renderAll(); });
     });
 
-    btnRec.addEventListener("click", () => {
+    actions.querySelector("#mAddRec").addEventListener("click", () => {
       if (state.recipes.length === 0) {
         alert(t("needRecipeFirst"));
-        setTab("recipes");
-        closeModal();
-        return;
+        setTab("recipes"); closeModal(); return;
       }
-      openRecipePickerForDay(mealKey, () => {
-        renderAll();
-        renderMealList();
-      });
+      openRecipePickerForDay(mealKey, () => { renderAll(); });
     });
 
-    btnManual.addEventListener("click", () => {
-      openManualEntryForDay(mealKey, () => {
-        renderAll();
-        renderMealList();
-      });
+    actions.querySelector("#mAddManual").addEventListener("click", () => {
+      openManualEntryForDay(mealKey, () => { renderAll(); });
     });
   });
+}
+
+function openDayEntryEditor(entry, mealKey) {
+  const reopen = () => { renderAll(); openMealModal(mealKey); };
+
+  if (entry.type === "ingredient") {
+    const ing = state.ingredients.find(x => x.id === entry.refId);
+    if (!ing) return;
+    openModal(`${t("editButton")} · ${ing.name}`, (container) => {
+      const form = document.createElement("form");
+      form.className = "modalRow";
+      form.innerHTML = `
+        <label class="field"><span>${escapeHtml(t("amountLabel"))}</span>
+          <input class="searchInput" id="mEditAmount" type="text" inputmode="decimal" value="${escapeHtml(String(entry.amount).replace(".", ","))}" placeholder="${escapeHtml(amountPlaceholder(ing.unitType))}">
+        </label>
+        <button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
+      container.appendChild(form);
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        const n = parseNumber(form.querySelector("#mEditAmount").value);
+        if (!Number.isFinite(n) || n <= 0) return alert(t("amountPositive"));
+        entry.amount = n; saveState(); closeModal(); reopen();
+      });
+    });
+    return;
+  }
+
+  if (entry.type === "recipe") {
+    const recipe = state.recipes.find(x => x.id === entry.refId);
+    if (!recipe) return;
+    openModal(`${t("editButton")} · ${recipe.name}`, (container) => {
+      const form = document.createElement("form");
+      form.className = "modalRow";
+      form.innerHTML = `
+        <label class="field"><span>${escapeHtml(t("portionAmount"))}</span>
+          <input class="searchInput" id="mEditAmount" type="text" inputmode="decimal" value="${escapeHtml(String(entry.amount).replace(".", ","))}">
+        </label>
+        <button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
+      container.appendChild(form);
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        const n = parseNumber(form.querySelector("#mEditAmount").value);
+        if (!Number.isFinite(n) || n <= 0) return alert(t("amountPositive"));
+        entry.amount = n; saveState(); closeModal(); reopen();
+      });
+    });
+    return;
+  }
+
+  if (entry.type === "manual") {
+    openModal(t("editManual"), (container) => {
+      const form = document.createElement("form");
+      form.className = "modalRow";
+      form.innerHTML = `
+        <label class="field"><span>${escapeHtml(t("manualName"))}</span><input id="eName" type="text" value="${escapeHtml(entry.name || "")}"></label>
+        <div class="grid2">
+          <label class="field"><span>kcal</span><input id="eKcal" type="text" inputmode="decimal" value="${escapeHtml(String(entry.kcal ?? 0).replace(".", ","))}"></label>
+          <label class="field"><span>${escapeHtml(t("proteinLabel"))}</span><input id="eProtein" type="text" inputmode="decimal" value="${escapeHtml(String(entry.protein ?? 0).replace(".", ","))}"></label>
+          <label class="field"><span>${escapeHtml(t("carbsLabel"))}</span><input id="eCarbs" type="text" inputmode="decimal" value="${escapeHtml(String(entry.carbs ?? 0).replace(".", ","))}"></label>
+          <label class="field"><span>${escapeHtml(t("fatLabel"))}</span><input id="eFat" type="text" inputmode="decimal" value="${escapeHtml(String(entry.fat ?? 0).replace(".", ","))}"></label>
+        </div>
+        <label class="field"><span>${escapeHtml(t("priceLabel"))}</span><input id="ePrice" type="text" inputmode="decimal" value="${escapeHtml(String(entry.price ?? 0).replace(".", ","))}"></label>
+        <button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
+      container.appendChild(form);
+      form.addEventListener("submit", e => {
+        e.preventDefault();
+        const values = {
+          kcal: parseNumber(form.querySelector("#eKcal").value), protein: parseNumber(form.querySelector("#eProtein").value),
+          carbs: parseNumber(form.querySelector("#eCarbs").value), fat: parseNumber(form.querySelector("#eFat").value),
+          price: parseNumber(form.querySelector("#ePrice").value)
+        };
+        if (Object.values(values).some(v => !Number.isFinite(v) || v < 0)) return alert(t("numberNonNegative"));
+        Object.assign(entry, values, { name: form.querySelector("#eName").value.trim() });
+        saveState(); closeModal(); reopen();
+      });
+    });
+  }
 }
 
 function openManualEntryForDay(mealKey, onDone) {
@@ -1622,6 +1813,128 @@ function openRecipePickerForDay(mealKey, onDone) {
 }
 
 
+
+/* ===== Supplements ===== */
+function openSupplementsModal() {
+  const dateText = selectedDayKey === nowDayKeyRollover0430() ? t("today") : formatDateKeyGerman(selectedDayKey);
+  openModal(`${t("supplements")} · ${dateText}`, (container) => {
+    const list = document.createElement("div");
+    list.className = "supplementManageList";
+    container.appendChild(list);
+
+    function renderList() {
+      list.innerHTML = "";
+      if (state.supplements.length === 0) {
+        const hint = document.createElement("div");
+        hint.className = "hint supplementEmpty";
+        hint.textContent = t("noSupplements");
+        list.appendChild(hint);
+      }
+
+      for (const sup of state.supplements) {
+        const taken = isSupplementTaken(sup.id);
+        const row = document.createElement("div");
+        row.className = `supplementManageRow${taken ? " supplementManageRow--taken" : ""}`;
+        row.innerHTML = `
+          <button class="supplementToggle" type="button" aria-pressed="${taken ? "true" : "false"}">
+            <span class="supplementCheck">${taken ? "✓" : ""}</span>
+            <span class="supplementManageText"><strong>${escapeHtml(sup.name)}</strong><small>${escapeHtml(supplementAmountText(sup))}${sup.relevant ? ` · ${escapeHtml(t("goalRelevant"))}` : ""}</small></span>
+          </button>
+          <button class="btn btn--danger supplementDelete" type="button">${escapeHtml(t("deleteButton"))}</button>`;
+
+        row.querySelector(".supplementToggle").addEventListener("click", () => {
+          toggleSupplementTaken(sup.id);
+          renderAll();
+          renderList();
+        });
+        row.querySelector(".supplementDelete").addEventListener("click", () => {
+          state.supplements = state.supplements.filter(x => x.id !== sup.id);
+          for (const key of Object.keys(state.supplementLogs || {})) {
+            state.supplementLogs[key] = (state.supplementLogs[key] || []).filter(id => id !== String(sup.id));
+          }
+          saveState(); renderAll(); renderList();
+        });
+        list.appendChild(row);
+      }
+    }
+
+    renderList();
+
+    const create = document.createElement("button");
+    create.className = "btn btn--big supplementCreateBtn";
+    create.type = "button";
+    create.textContent = t("createSupplement");
+    create.addEventListener("click", openSupplementCreator);
+    container.appendChild(create);
+  });
+}
+
+function openSupplementCreator() {
+  openModal(t("createSupplement"), (container) => {
+    const form = document.createElement("form");
+    form.className = "modalRow";
+    form.innerHTML = `
+      <label class="field"><span>${escapeHtml(t("supplementName"))}</span><input id="supName" type="text" required placeholder="${escapeHtml(t("supplementNamePlaceholder"))}"></label>
+      <div class="supplementAmountEditor">
+        <label class="field"><span>${escapeHtml(t("supplementAmount"))}</span><input id="supAmount" type="text" inputmode="decimal" required placeholder="1"></label>
+        <label class="field"><span>${escapeHtml(t("unit"))}</span><select id="supUnit"><option value="piece">${escapeHtml(t("pieces"))}</option><option value="g">g</option></select></label>
+      </div>
+      <label class="checkRow"><input id="supRelevant" type="checkbox"><span>${escapeHtml(t("supplementRelevant"))}</span></label>
+      <button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
+    container.appendChild(form);
+
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      const name = form.querySelector("#supName").value.trim();
+      const amount = parseNumber(form.querySelector("#supAmount").value);
+      const unit = form.querySelector("#supUnit").value === "g" ? "g" : "piece";
+      if (!name) return alert(t("supplementNameRequired"));
+      if (!Number.isFinite(amount) || amount <= 0) return alert(t("amountPositive"));
+      state.supplements.push({ id: uid(), name, amount, unit, relevant: form.querySelector("#supRelevant").checked, createdOn: selectedDayKey });
+      saveState(); closeModal(); renderAll(); openSupplementsModal();
+    });
+  });
+}
+
+function renderSupplementsOverview() {
+  const block = document.createElement("div");
+  block.className = "supplementBlock";
+  block.addEventListener("click", openSupplementsModal);
+
+  const title = document.createElement("div");
+  title.className = "supplementBlock__title";
+  title.textContent = t("supplements");
+  block.appendChild(title);
+
+  if (state.supplements.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "supplementBlock__empty";
+    empty.textContent = t("tapToCreateSupplement");
+    block.appendChild(empty);
+    return block;
+  }
+
+  const grid = document.createElement("div");
+  grid.className = "supplementGrid";
+  grid.style.setProperty("--supp-cols", String(Math.min(4, state.supplements.length)));
+  for (const sup of state.supplements) {
+    const taken = isSupplementTaken(sup.id);
+    const tile = document.createElement("button");
+    tile.type = "button";
+    tile.className = `supplementTile${taken ? " supplementTile--taken" : ""}`;
+    tile.title = `${sup.name} · ${supplementAmountText(sup)}`;
+    tile.innerHTML = `<span>${escapeHtml(sup.name)}</span>`;
+    tile.addEventListener("click", e => {
+      e.stopPropagation();
+      toggleSupplementTaken(sup.id);
+      renderAll();
+    });
+    grid.appendChild(tile);
+  }
+  block.appendChild(grid);
+  return block;
+}
+
 /* ===== Rendering ===== */
 function renderAll() {
   // If time has moved to a new rollover day and selected is "today", keep it synced.
@@ -1641,7 +1954,7 @@ function renderAll() {
 let todayKeyFromLastRender = nowDayKeyRollover0430();
 
 function getVisibleDayEntries(key) {
-  const log = getDayLog(key) || [];
+  const log = state.dayLogs?.[key] || [];
 
   // Skip entries whose refId no longer exists
   return log.filter(entry => {
@@ -1722,6 +2035,37 @@ function eurosPer100kcal(totals) {
   return (totals.price / totals.kcal) * 100;
 }
 
+
+function isDayGoalAchieved(key) {
+  const totals = calcTotalsForEntries(getVisibleDayEntries(key));
+  let criteria = 0;
+  let ok = true;
+
+  for (const goalKey of GOAL_KEYS) {
+    if (!state.goalRelevant?.[goalKey]) continue;
+    criteria++;
+    const goal = Number(state.goals?.[goalKey]) || 0;
+    const value = Number(totals?.[goalKey]) || 0;
+    if (!(goal > 0 && value >= goal * 0.9)) ok = false;
+  }
+
+  const relevantSupplements = (state.supplements || []).filter(s => s.relevant && (!s.createdOn || s.createdOn <= key));
+  const taken = new Set((state.supplementLogs?.[key] || []).map(String));
+  for (const sup of relevantSupplements) {
+    criteria++;
+    if (!taken.has(String(sup.id))) ok = false;
+  }
+
+  return criteria > 0 && ok;
+}
+
+function remainingText(value, goal, type) {
+  const remaining = Math.max(0, (Number(goal) || 0) - (Number(value) || 0));
+  if (type === "kcal") return `${t("remaining")} ${Math.round(remaining)} kcal`;
+  if (type === "price") return `${t("remaining")} ${euroPlain(remaining)} €`;
+  return `${t("remaining")} ${round1(remaining).replace(".", ",")} g`;
+}
+
 function renderDay() {
   const visibleEntries = getVisibleDayEntries(selectedDayKey);
 
@@ -1737,26 +2081,31 @@ function renderDay() {
 
   dayKcalValue.textContent = String(Math.round(dayTotals.kcal));
   dayKcalPct.textContent = `${kcalPctValue}%`;
+  if (dayKcalRemaining) dayKcalRemaining.textContent = remainingText(dayTotals.kcal, state.goals.kcal, "kcal");
   updateGoalProgress(dayKcalProgress, kcalPctValue);
 
   dayProteinValue.textContent = `${round1(dayTotals.protein).replace(".", ",")}`;
   dayProteinPct.textContent = `${proteinPctValue}%`;
+  if (dayProteinRemaining) dayProteinRemaining.textContent = remainingText(dayTotals.protein, state.goals.protein, "protein");
   updateGoalProgress(dayProteinProgress, proteinPctValue);
 
   dayPriceValue.textContent = euroPlain(dayTotals.price);
   dayPricePct.textContent = `${pricePctValue}%`;
+  if (dayPriceRemaining) dayPriceRemaining.textContent = remainingText(dayTotals.price, state.goals.price, "price");
   updateGoalProgress(dayPriceProgress, pricePctValue);
 
   dayCarbsValue.textContent = `${round1(dayTotals.carbs).replace(".", ",")}`;
   dayCarbsPct.textContent = `${carbsPctValue}%`;
+  if (dayCarbsRemaining) dayCarbsRemaining.textContent = remainingText(dayTotals.carbs, state.goals.carbs, "carbs");
   updateGoalProgress(dayCarbsProgress, carbsPctValue);
 
   dayFatValue.textContent = `${round1(dayTotals.fat).replace(".", ",")}`;
   dayFatPct.textContent = `${fatPctValue}%`;
+  if (dayFatRemaining) dayFatRemaining.textContent = remainingText(dayTotals.fat, state.goals.fat, "fat");
   updateGoalProgress(dayFatProgress, fatPctValue);
 
   // Empty hint
-const hasAny = visibleEntries.length > 0;
+const hasAny = visibleEntries.length > 0 || (state.supplements || []).length > 0;
 dayEmptyHint.textContent = t("noEntries");
 dayEmptyHint.classList.toggle("hidden", hasAny);
 
@@ -1926,6 +2275,7 @@ const protPer100kcalText = Number.isFinite(protPer100kcal)
     `;
 
     mealBlocks.appendChild(block);
+    if (meal.key === "lunch") mealBlocks.appendChild(renderSupplementsOverview());
   }
 
 }
@@ -2087,6 +2437,38 @@ const I18N = {
     data: "Daten",
     export: "E",
     import: "I",
+    editGoals: "Ziele bearbeiten",
+    editButton: "Bearbeiten",
+    editManual: "Manuellen Eintrag bearbeiten",
+    amountLabel: "Menge",
+    portionAmount: "Portion / Faktor",
+    amountPositive: "Menge muss > 0 sein.",
+    goalKcal: "kcal Ziel pro Tag",
+    goalProtein: "Protein Ziel pro Tag (g)",
+    goalPrice: "Preis Ziel pro Tag (€)",
+    goalCarbs: "Kohlenhydrate Ziel pro Tag (g)",
+    goalFat: "Fett Ziel pro Tag (g)",
+    goalRelevant: "Tagesziel",
+    goalRelevantHint: "Für die Tagesziel-Erfüllung berücksichtigen",
+    goalPositive: "Ziel muss > 0 sein.",
+    remaining: "Noch",
+    supplements: "Supplements",
+    noSupplements: "Noch keine Supplements.",
+    tapToCreateSupplement: "Antippen zum Erstellen",
+    createSupplement: "Supplement erstellen",
+    supplementName: "Name",
+    supplementNamePlaceholder: "z.B. Kreatin",
+    supplementAmount: "Menge / Gewicht",
+    unit: "Einheit",
+    pieces: "Stück",
+    supplementRelevant: "Relevant für Tagesziel",
+    supplementNameRequired: "Bitte einen Namen eingeben.",
+    calendarTitle: "Tagesziele im Kalender",
+    calendarAchieved: "Erreicht",
+    calendarMissed: "Nicht erreicht",
+    calendarTodayOpen: "Heute offen",
+    calendarFuture: "Zukünftig",
+    weekShort: "KW",
 
     // meals
     breakfast: "Frühstück",
@@ -2159,6 +2541,38 @@ const I18N = {
     data: "Data",
     export: "E",
     import: "I",
+    editGoals: "Edit goals",
+    editButton: "Edit",
+    editManual: "Edit manual entry",
+    amountLabel: "Amount",
+    portionAmount: "Portion / factor",
+    amountPositive: "Amount must be > 0.",
+    goalKcal: "Daily kcal goal",
+    goalProtein: "Daily protein goal (g)",
+    goalPrice: "Daily price goal (€)",
+    goalCarbs: "Daily carbs goal (g)",
+    goalFat: "Daily fat goal (g)",
+    goalRelevant: "Daily goal",
+    goalRelevantHint: "Include in daily goal completion",
+    goalPositive: "Goal must be > 0.",
+    remaining: "Left",
+    supplements: "Supplements",
+    noSupplements: "No supplements yet.",
+    tapToCreateSupplement: "Tap to create",
+    createSupplement: "Create supplement",
+    supplementName: "Name",
+    supplementNamePlaceholder: "e.g. creatine",
+    supplementAmount: "Amount / weight",
+    unit: "Unit",
+    pieces: "Pieces",
+    supplementRelevant: "Relevant for daily goal",
+    supplementNameRequired: "Please enter a name.",
+    calendarTitle: "Daily goals calendar",
+    calendarAchieved: "Achieved",
+    calendarMissed: "Not achieved",
+    calendarTodayOpen: "Today open",
+    calendarFuture: "Future",
+    weekShort: "Wk",
 
     breakfast: "Breakfast",
     lunch: "Lunch",
@@ -2209,6 +2623,12 @@ function applyLanguage(lang) {
   const elImport = document.querySelector("#btnImport");
   if (elExport) elExport.textContent = t("export");
   if (elImport) elImport.textContent = t("import");
+
+  const elCalendar = document.querySelector("#btnCalendar");
+  if (elCalendar) {
+    elCalendar.setAttribute("aria-label", t("calendarTitle"));
+    elCalendar.setAttribute("title", t("calendarTitle"));
+  }
 
   const elModalClose = document.querySelector("#modalClose");
   if (elModalClose) {

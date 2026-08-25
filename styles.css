@@ -1463,3 +1463,271 @@ html:not(.theme--light) .mealGrid .mealLine:nth-child(4){
     font-size:11px;
   }
 }
+
+
+/* ===== UI refinement 8: supplements, goal calendar, editable day entries ===== */
+.metric__remaining{
+  margin-top:2px;
+  color:var(--muted);
+  font-size:8px;
+  line-height:1;
+  font-weight:750;
+  text-align:center;
+  white-space:nowrap;
+}
+@media (min-width:701px){ .metric__remaining{ font-size:10px; margin-top:3px; } }
+
+/* Keep the added remaining line compact without making the cards tall again. */
+@media (max-width:700px){
+  .metric,.miniMetric{ min-height:80px !important; }
+  .metric__sub,.miniMetric__sub{ margin-top:2px !important; }
+  .metricProgress{ bottom:4px; }
+}
+
+.dateBar{ grid-template-columns:40px minmax(0,1fr) 36px 40px; }
+.calendarBtn{
+  min-width:36px;
+  padding:7px 6px;
+  font-size:18px;
+  line-height:1;
+}
+
+/* Supplements between lunch and snacks. */
+.supplementBlock{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:7px 8px;
+  display:grid;
+  gap:6px;
+  cursor:pointer;
+  background:linear-gradient(180deg, var(--card), var(--card-tint));
+  box-shadow:var(--shadow-soft);
+}
+.supplementBlock__title{
+  text-align:center;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:.1px;
+}
+.supplementBlock__empty{
+  text-align:center;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:750;
+  padding:2px 0;
+}
+.supplementGrid{
+  display:grid;
+  grid-template-columns:repeat(var(--supp-cols,4), minmax(0,1fr));
+  gap:5px;
+}
+.supplementTile{
+  min-width:0;
+  min-height:30px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:5px 4px;
+  background:rgba(255,255,255,.20);
+  color:var(--text);
+  font:inherit;
+  cursor:pointer;
+  text-align:center;
+  box-shadow:none;
+}
+html:not(.theme--light) .supplementTile{ background:rgba(255,255,255,.04); }
+.supplementTile span{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:9px;
+  line-height:1.05;
+  font-weight:850;
+}
+.supplementTile--taken{
+  border-color:rgba(34,160,107,.66);
+  background:rgba(34,160,107,.11);
+  box-shadow:0 0 0 1px rgba(34,160,107,.12) inset;
+}
+html:not(.theme--light) .supplementTile--taken{
+  border-color:rgba(70,190,130,.72);
+  background:rgba(60,185,120,.12);
+}
+@media (min-width:701px){
+  .supplementBlock{ padding:9px 10px; gap:8px; }
+  .supplementBlock__title{ font-size:12px; }
+  .supplementTile{ min-height:36px; padding:7px 5px; }
+  .supplementTile span{ font-size:11px; }
+}
+
+.supplementManageList{ display:grid; gap:7px; }
+.supplementManageRow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:7px;
+  align-items:stretch;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:6px;
+  background:rgba(255,255,255,.20);
+}
+html:not(.theme--light) .supplementManageRow{ background:rgba(255,255,255,.04); }
+.supplementManageRow--taken{ border-color:rgba(34,160,107,.55); background:rgba(34,160,107,.09); }
+.supplementToggle{
+  border:0;
+  background:transparent;
+  color:var(--text);
+  padding:2px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  text-align:left;
+  cursor:pointer;
+  min-width:0;
+}
+.supplementCheck{
+  width:24px;
+  height:24px;
+  flex:0 0 24px;
+  border:1px solid var(--line);
+  border-radius:7px;
+  display:grid;
+  place-items:center;
+  font-size:14px;
+  font-weight:950;
+}
+.supplementManageRow--taken .supplementCheck{
+  border-color:rgba(34,160,107,.62);
+  color:rgb(22,145,86);
+  background:rgba(34,160,107,.10);
+}
+.supplementManageText{ min-width:0; display:grid; gap:2px; }
+.supplementManageText strong{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+.supplementManageText small{ color:var(--muted); font-size:9px; font-weight:750; }
+.supplementDelete{ min-height:30px; padding:5px 8px; font-size:9px; box-shadow:none; }
+.supplementCreateBtn{ width:100%; margin-top:3px; }
+.supplementAmountEditor{ display:grid; grid-template-columns:1fr 110px; gap:8px; }
+.checkRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--text);
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+}
+.checkRow input,.goalEditorCheck input{ width:18px; height:18px; accent-color:var(--accent); }
+
+/* Goals editor: relevance checkbox stays compact next to each goal. */
+.goalEditor{ display:grid; gap:8px; }
+.goalEditorRow{
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:7px 8px;
+  background:rgba(255,255,255,.20);
+  display:grid;
+  grid-template-columns:88px minmax(0,1fr);
+  gap:8px;
+  align-items:center;
+}
+html:not(.theme--light) .goalEditorRow{ background:rgba(255,255,255,.04); }
+.goalEditorCheck{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:850;
+  cursor:pointer;
+}
+.goalEditorField{ margin:0 !important; gap:4px !important; }
+.goalEditorField span{ font-size:10px !important; }
+.goalEditorField .searchInput{ min-height:36px; padding:7px 9px; }
+
+/* Edit/delete controls together at top-right of eaten entries. */
+.mealEntryActions{ display:flex; gap:4px; align-items:flex-start; flex:0 0 auto; }
+.mealEntryCard .mealEntryEdit,
+.mealEntryCard .mealEntryDelete{
+  min-height:28px;
+  padding:4px 7px;
+  border-radius:8px;
+  font-size:8.5px;
+  line-height:1;
+  box-shadow:none;
+}
+@media (min-width:701px){
+  .mealEntryCard .mealEntryEdit,.mealEntryCard .mealEntryDelete{ min-height:32px; padding:6px 9px; font-size:10.5px; }
+}
+
+/* Calendar overview grouped by weeks. */
+.calendarLegend{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  gap:6px 10px;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:750;
+}
+.calendarLegend span{ display:flex; align-items:center; gap:4px; }
+.calendarDot{ width:7px; height:7px; border-radius:50%; display:inline-block; }
+.calendarDot--achieved{ background:#22a06b; }
+.calendarDot--missed{ background:#d84c4c; }
+.calendarDot--today{ background:#d5a31a; }
+.calendarDot--future{ background:rgba(128,128,128,.42); }
+.calendarScroll{
+  max-height:none;
+  overflow:visible;
+  display:grid;
+  gap:7px;
+  padding:2px 1px 6px;
+  scroll-behavior:smooth;
+}
+.calendarWeek{
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:6px;
+  background:rgba(255,255,255,.18);
+}
+html:not(.theme--light) .calendarWeek{ background:rgba(255,255,255,.035); }
+.calendarWeek--current{
+  border-color:rgba(79,143,230,.55);
+  box-shadow:0 0 0 1px rgba(79,143,230,.12) inset;
+}
+.calendarWeek__title{
+  text-align:center;
+  color:var(--muted);
+  font-size:8px;
+  font-weight:850;
+  margin-bottom:5px;
+}
+.calendarDays{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; }
+.calendarDay{
+  min-width:0;
+  min-height:38px;
+  border:1px solid transparent;
+  border-radius:8px;
+  padding:4px 2px;
+  display:grid;
+  place-items:center;
+  gap:1px;
+  color:var(--text);
+  font:inherit;
+  cursor:pointer;
+}
+.calendarDay__weekday{ font-size:7px; font-weight:750; opacity:.72; }
+.calendarDay__date{ font-size:11px; font-weight:950; }
+.calendarDay--achieved{ background:rgba(34,160,107,.14); border-color:rgba(34,160,107,.40); }
+.calendarDay--missed{ background:rgba(216,76,76,.11); border-color:rgba(216,76,76,.32); }
+.calendarDay--today-open{ background:rgba(213,163,26,.15); border-color:rgba(213,163,26,.44); }
+.calendarDay--future{ background:rgba(128,128,128,.07); border-color:var(--line); color:var(--muted); cursor:default; }
+.calendarDay--selected{ box-shadow:0 0 0 2px var(--accent) inset; }
+@media (min-width:701px){
+  .calendarLegend{ font-size:10px; gap:8px 14px; }
+  .calendarWeek{ padding:8px; }
+  .calendarWeek__title{ font-size:10px; }
+  .calendarDay{ min-height:52px; }
+  .calendarDay__weekday{ font-size:9px; }
+  .calendarDay__date{ font-size:15px; }
+}
