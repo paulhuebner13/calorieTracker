@@ -1891,44 +1891,95 @@ function attachSupplementDrag(handle, row, list) {
   handle.addEventListener("pointerdown", (event) => {
     if (event.button != null && event.button !== 0) return;
     event.preventDefault();
+    event.stopPropagation();
 
-    let moved = false;
-    row.classList.add("supplementManageRow--dragging");
-    handle.setPointerCapture?.(event.pointerId);
+    const pointerId = event.pointerId;
+    const startY = event.clientY;
+    let lastY = startY;
+    let dragging = false;
+    let orderChanged = false;
+
+    // Pointer capture keeps the drag alive even if the finger leaves the grip.
+    try { handle.setPointerCapture(pointerId); } catch {}
+
+    const beginDrag = () => {
+      if (dragging) return;
+      dragging = true;
+      row.classList.add("supplementManageRow--dragging");
+      list.classList.add("supplementManageList--dragging");
+      document.documentElement.classList.add("supplementDragActive");
+    };
+
+    const placeRowAtY = (clientY) => {
+      const rows = [...list.querySelectorAll(".supplementManageRow")].filter(el => el !== row);
+      let before = null;
+
+      for (const candidate of rows) {
+        const rect = candidate.getBoundingClientRect();
+        if (clientY < rect.top + rect.height / 2) {
+          before = candidate;
+          break;
+        }
+      }
+
+      const oldNext = row.nextElementSibling;
+      if (before) {
+        if (before !== oldNext) {
+          list.insertBefore(row, before);
+          orderChanged = true;
+        }
+      } else {
+        const lastRow = rows[rows.length - 1];
+        if (lastRow && lastRow.nextElementSibling !== row) {
+          list.appendChild(row);
+          orderChanged = true;
+        }
+      }
+    };
+
+    const autoScroll = (clientY) => {
+      const sheet = list.closest(".modal__sheet");
+      if (!sheet) return;
+      const rect = sheet.getBoundingClientRect();
+      const edge = 58;
+      if (clientY < rect.top + edge) sheet.scrollTop -= 12;
+      else if (clientY > rect.bottom - edge) sheet.scrollTop += 12;
+    };
 
     const move = (e) => {
-      e.preventDefault();
-      const hit = document.elementFromPoint(e.clientX, e.clientY);
-      const target = hit?.closest?.(".supplementManageRow");
-      if (!target || target === row || target.parentElement !== list) return;
+      if (e.pointerId !== pointerId) return;
+      lastY = e.clientY;
 
-      const rect = target.getBoundingClientRect();
-      const after = e.clientY > rect.top + rect.height / 2;
-      if (after) {
-        list.insertBefore(row, target.nextSibling);
-      } else {
-        list.insertBefore(row, target);
-      }
-      moved = true;
+      // Small threshold prevents an ordinary tap on the grip from starting a drag.
+      if (!dragging && Math.abs(lastY - startY) < 5) return;
+      beginDrag();
+      e.preventDefault();
+      placeRowAtY(lastY);
+      autoScroll(lastY);
     };
 
     const finish = (e) => {
-      handle.removeEventListener("pointermove", move);
-      handle.removeEventListener("pointerup", finish);
-      handle.removeEventListener("pointercancel", finish);
+      if (e.pointerId !== pointerId) return;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
       row.classList.remove("supplementManageRow--dragging");
-      try { handle.releasePointerCapture?.(e.pointerId); } catch {}
+      list.classList.remove("supplementManageList--dragging");
+      document.documentElement.classList.remove("supplementDragActive");
+      try { handle.releasePointerCapture(pointerId); } catch {}
 
-      if (moved) {
+      if (dragging) {
+        // Always sync after a completed drag; this is cheap and avoids edge cases
+        // where the final DOM position changed without the flag being set.
         syncSupplementOrderFromManageList(list);
         saveState();
         renderAll();
       }
     };
 
-    handle.addEventListener("pointermove", move);
-    handle.addEventListener("pointerup", finish);
-    handle.addEventListener("pointercancel", finish);
+    window.addEventListener("pointermove", move, { passive: false });
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
   });
 }
 
