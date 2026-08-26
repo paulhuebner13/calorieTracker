@@ -237,14 +237,36 @@ function normalizeStateObject(s) {
   }
 
   if (!Array.isArray(obj.supplements)) obj.supplements = [];
-  obj.supplements = obj.supplements.map(sup => ({
-    id: sup?.id || uid(),
-    name: String(sup?.name || "").trim(),
-    amount: Number.isFinite(Number(sup?.amount)) ? Number(sup.amount) : 1,
-    unit: sup?.unit === "g" ? "g" : "piece",
-    relevant: Boolean(sup?.relevant),
-    createdOn: /^\d{4}-\d{2}-\d{2}$/.test(String(sup?.createdOn || "")) ? String(sup.createdOn) : null
-  })).filter(sup => sup.name);
+  obj.supplements = obj.supplements.map(sup => {
+    const todayKey = nowDayKeyRollover0430();
+    const createdOn = /^\d{4}-\d{2}-\d{2}$/.test(String(sup?.createdOn || ""))
+      ? String(sup.createdOn)
+      : todayKey;
+    const relevant = Boolean(sup?.relevant);
+
+    let relevancePeriods = Array.isArray(sup?.relevancePeriods)
+      ? sup.relevancePeriods.map(period => ({
+          from: /^\d{4}-\d{2}-\d{2}$/.test(String(period?.from || "")) ? String(period.from) : null,
+          to: /^\d{4}-\d{2}-\d{2}$/.test(String(period?.to || "")) ? String(period.to) : null
+        })).filter(period => period.from)
+      : [];
+
+    // Backward compatibility for supplements created with v8:
+    // a relevant supplement starts counting only from the day it was created.
+    if (relevancePeriods.length === 0 && relevant) {
+      relevancePeriods = [{ from: createdOn, to: null }];
+    }
+
+    return {
+      id: sup?.id || uid(),
+      name: String(sup?.name || "").trim(),
+      amount: Number.isFinite(Number(sup?.amount)) ? Number(sup.amount) : 1,
+      unit: sup?.unit === "g" ? "g" : "piece",
+      relevant,
+      createdOn,
+      relevancePeriods
+    };
+  }).filter(sup => sup.name);
 
   if (!obj.supplementLogs || typeof obj.supplementLogs !== "object") obj.supplementLogs = {};
   for (const [key, ids] of Object.entries(obj.supplementLogs)) {
@@ -323,7 +345,47 @@ function supplementAmountText(sup) {
   const clean = String(Math.round(amount * 100) / 100).replace(".", ",");
   if (sup.unit === "g") return `${clean} g`;
   if (loadLanguage() === "en") return `${clean} ${Math.abs(amount - 1) < 0.0001 ? "piece" : "pieces"}`;
-  return `${clean} ${Math.abs(amount - 1) < 0.0001 ? "Stück" : "Stück"}`;
+  return `${clean} Stück`;
+}
+
+function previousDayKey(key) {
+  return dayKeyFromDate(addDays(dateFromDayKey(key), -1));
+}
+
+function isSupplementRelevantOn(sup, key) {
+  const periods = Array.isArray(sup?.relevancePeriods) ? sup.relevancePeriods : [];
+  return periods.some(period => {
+    if (!period?.from || period.from > key) return false;
+    return !period.to || key <= period.to;
+  });
+}
+
+function updateSupplementRelevance(sup, nextRelevant, effectiveKey = nowDayKeyRollover0430()) {
+  const currentRelevant = Boolean(sup.relevant);
+  const next = Boolean(nextRelevant);
+  if (currentRelevant === next) return;
+
+  if (!Array.isArray(sup.relevancePeriods)) sup.relevancePeriods = [];
+
+  if (next) {
+    sup.relevancePeriods.push({ from: effectiveKey, to: null });
+  } else {
+    const openIndex = [...sup.relevancePeriods].map((period, index) => ({ period, index }))
+      .reverse()
+      .find(x => !x.period.to)?.index;
+
+    if (Number.isInteger(openIndex)) {
+      const open = sup.relevancePeriods[openIndex];
+      const to = previousDayKey(effectiveKey);
+      if (to < open.from) {
+        sup.relevancePeriods.splice(openIndex, 1);
+      } else {
+        open.to = to;
+      }
+    }
+  }
+
+  sup.relevant = next;
 }
 
 /* ===== Calc ===== */
@@ -672,7 +734,7 @@ const importFile = $("#importFile");
 
 btnExport.addEventListener("click", () => {
   // Add optional schemaVersion, but keep structure identical so old importers still work
-  const payload = { ...state, schemaVersion: 4 };
+  const payload = { ...state, schemaVersion: 5 };
   const data = JSON.stringify(payload, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -1815,6 +1877,61 @@ function openRecipePickerForDay(mealKey, onDone) {
 
 
 /* ===== Supplements ===== */
+function syncSupplementOrderFromManageList(list) {
+  const ids = [...list.querySelectorAll(".supplementManageRow")]
+    .map(row => row.dataset.supplementId)
+    .filter(Boolean);
+  if (ids.length !== state.supplements.length) return;
+
+  const byId = new Map(state.supplements.map(sup => [String(sup.id), sup]));
+  state.supplements = ids.map(id => byId.get(String(id))).filter(Boolean);
+}
+
+function attachSupplementDrag(handle, row, list) {
+  handle.addEventListener("pointerdown", (event) => {
+    if (event.button != null && event.button !== 0) return;
+    event.preventDefault();
+
+    let moved = false;
+    row.classList.add("supplementManageRow--dragging");
+    handle.setPointerCapture?.(event.pointerId);
+
+    const move = (e) => {
+      e.preventDefault();
+      const hit = document.elementFromPoint(e.clientX, e.clientY);
+      const target = hit?.closest?.(".supplementManageRow");
+      if (!target || target === row || target.parentElement !== list) return;
+
+      const rect = target.getBoundingClientRect();
+      const after = e.clientY > rect.top + rect.height / 2;
+      if (after) {
+        list.insertBefore(row, target.nextSibling);
+      } else {
+        list.insertBefore(row, target);
+      }
+      moved = true;
+    };
+
+    const finish = (e) => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", finish);
+      handle.removeEventListener("pointercancel", finish);
+      row.classList.remove("supplementManageRow--dragging");
+      try { handle.releasePointerCapture?.(e.pointerId); } catch {}
+
+      if (moved) {
+        syncSupplementOrderFromManageList(list);
+        saveState();
+        renderAll();
+      }
+    };
+
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", finish);
+    handle.addEventListener("pointercancel", finish);
+  });
+}
+
 function openSupplementsModal() {
   const dateText = selectedDayKey === nowDayKeyRollover0430() ? t("today") : formatDateKeyGerman(selectedDayKey);
   openModal(`${t("supplements")} · ${dateText}`, (container) => {
@@ -1824,10 +1941,16 @@ function openSupplementsModal() {
 
     function renderList() {
       list.innerHTML = "";
+
       if (state.supplements.length === 0) {
         const hint = document.createElement("div");
         hint.className = "hint supplementEmpty";
         hint.textContent = t("noSupplements");
+        list.appendChild(hint);
+      } else if (state.supplements.length > 1) {
+        const hint = document.createElement("div");
+        hint.className = "supplementReorderHint";
+        hint.textContent = t("supplementReorderHint");
         list.appendChild(hint);
       }
 
@@ -1835,25 +1958,44 @@ function openSupplementsModal() {
         const taken = isSupplementTaken(sup.id);
         const row = document.createElement("div");
         row.className = `supplementManageRow${taken ? " supplementManageRow--taken" : ""}`;
+        row.dataset.supplementId = String(sup.id);
         row.innerHTML = `
+          <button class="supplementDragHandle" type="button" aria-label="${escapeHtml(t("supplementReorder"))}" title="${escapeHtml(t("supplementReorder"))}">↕</button>
           <button class="supplementToggle" type="button" aria-pressed="${taken ? "true" : "false"}">
             <span class="supplementCheck">${taken ? "✓" : ""}</span>
-            <span class="supplementManageText"><strong>${escapeHtml(sup.name)}</strong><small>${escapeHtml(supplementAmountText(sup))}${sup.relevant ? ` · ${escapeHtml(t("goalRelevant"))}` : ""}</small></span>
+            <span class="supplementManageText">
+              <strong>${escapeHtml(sup.name)}</strong>
+              <small>${escapeHtml(supplementAmountText(sup))}${sup.relevant ? ` · ${escapeHtml(t("goalRelevant"))}` : ""}</small>
+            </span>
           </button>
-          <button class="btn btn--danger supplementDelete" type="button">${escapeHtml(t("deleteButton"))}</button>`;
+          <div class="supplementManageActions">
+            <button class="btn btn--ghost supplementEdit" type="button">${escapeHtml(t("editButton"))}</button>
+            <button class="btn btn--danger supplementDelete" type="button">${escapeHtml(t("deleteButton"))}</button>
+          </div>`;
+
+        const dragHandle = row.querySelector(".supplementDragHandle");
+        attachSupplementDrag(dragHandle, row, list);
 
         row.querySelector(".supplementToggle").addEventListener("click", () => {
           toggleSupplementTaken(sup.id);
           renderAll();
           renderList();
         });
+
+        row.querySelector(".supplementEdit").addEventListener("click", () => {
+          openSupplementEditor(sup);
+        });
+
         row.querySelector(".supplementDelete").addEventListener("click", () => {
           state.supplements = state.supplements.filter(x => x.id !== sup.id);
           for (const key of Object.keys(state.supplementLogs || {})) {
             state.supplementLogs[key] = (state.supplementLogs[key] || []).filter(id => id !== String(sup.id));
           }
-          saveState(); renderAll(); renderList();
+          saveState();
+          renderAll();
+          renderList();
         });
+
         list.appendChild(row);
       }
     }
@@ -1870,7 +2012,12 @@ function openSupplementsModal() {
 }
 
 function openSupplementCreator() {
-  openModal(t("createSupplement"), (container) => {
+  openSupplementEditor(null);
+}
+
+function openSupplementEditor(sup = null) {
+  const editing = Boolean(sup);
+  openModal(editing ? t("editSupplement") : t("createSupplement"), (container) => {
     const form = document.createElement("form");
     form.className = "modalRow";
     form.innerHTML = `
@@ -1880,18 +2027,54 @@ function openSupplementCreator() {
         <label class="field"><span>${escapeHtml(t("unit"))}</span><select id="supUnit"><option value="piece">${escapeHtml(t("pieces"))}</option><option value="g">g</option></select></label>
       </div>
       <label class="checkRow"><input id="supRelevant" type="checkbox"><span>${escapeHtml(t("supplementRelevant"))}</span></label>
+      <div class="supplementRelevanceNote">${escapeHtml(t("supplementRelevantFromNow"))}</div>
       <button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
     container.appendChild(form);
 
+    const nameInput = form.querySelector("#supName");
+    const amountInput = form.querySelector("#supAmount");
+    const unitInput = form.querySelector("#supUnit");
+    const relevantInput = form.querySelector("#supRelevant");
+
+    if (editing) {
+      nameInput.value = sup.name || "";
+      amountInput.value = String(sup.amount ?? "").replace(".", ",");
+      unitInput.value = sup.unit === "g" ? "g" : "piece";
+      relevantInput.checked = Boolean(sup.relevant);
+    }
+
     form.addEventListener("submit", e => {
       e.preventDefault();
-      const name = form.querySelector("#supName").value.trim();
-      const amount = parseNumber(form.querySelector("#supAmount").value);
-      const unit = form.querySelector("#supUnit").value === "g" ? "g" : "piece";
+      const name = nameInput.value.trim();
+      const amount = parseNumber(amountInput.value);
+      const unit = unitInput.value === "g" ? "g" : "piece";
+      const relevant = relevantInput.checked;
       if (!name) return alert(t("supplementNameRequired"));
       if (!Number.isFinite(amount) || amount <= 0) return alert(t("amountPositive"));
-      state.supplements.push({ id: uid(), name, amount, unit, relevant: form.querySelector("#supRelevant").checked, createdOn: selectedDayKey });
-      saveState(); closeModal(); renderAll(); openSupplementsModal();
+
+      const effectiveKey = nowDayKeyRollover0430();
+
+      if (editing) {
+        sup.name = name;
+        sup.amount = amount;
+        sup.unit = unit;
+        updateSupplementRelevance(sup, relevant, effectiveKey);
+      } else {
+        state.supplements.push({
+          id: uid(),
+          name,
+          amount,
+          unit,
+          relevant,
+          createdOn: effectiveKey,
+          relevancePeriods: relevant ? [{ from: effectiveKey, to: null }] : []
+        });
+      }
+
+      saveState();
+      closeModal();
+      renderAll();
+      openSupplementsModal();
     });
   });
 }
@@ -1916,21 +2099,38 @@ function renderSupplementsOverview() {
 
   const grid = document.createElement("div");
   grid.className = "supplementGrid";
-  grid.style.setProperty("--supp-cols", String(Math.min(4, state.supplements.length)));
-  for (const sup of state.supplements) {
-    const taken = isSupplementTaken(sup.id);
-    const tile = document.createElement("button");
-    tile.type = "button";
-    tile.className = `supplementTile${taken ? " supplementTile--taken" : ""}`;
-    tile.title = `${sup.name} · ${supplementAmountText(sup)}`;
-    tile.innerHTML = `<span>${escapeHtml(sup.name)}</span>`;
-    tile.addEventListener("click", e => {
-      e.stopPropagation();
-      toggleSupplementTaken(sup.id);
-      renderAll();
-    });
-    grid.appendChild(tile);
+
+  const count = state.supplements.length;
+  const rowCount = Math.ceil(count / 4);
+  const baseSize = Math.floor(count / rowCount);
+  const extra = count % rowCount;
+  const rowSizes = Array.from({ length: rowCount }, (_, index) => baseSize + (index < extra ? 1 : 0));
+
+  let offset = 0;
+  for (const rowSize of rowSizes) {
+    const row = document.createElement("div");
+    row.className = "supplementGridRow";
+    row.style.setProperty("--supp-row-cols", String(rowSize));
+
+    for (const sup of state.supplements.slice(offset, offset + rowSize)) {
+      const taken = isSupplementTaken(sup.id);
+      const tile = document.createElement("button");
+      tile.type = "button";
+      tile.className = `supplementTile${taken ? " supplementTile--taken" : ""}`;
+      tile.title = `${sup.name} · ${supplementAmountText(sup)}`;
+      tile.innerHTML = `<span>${escapeHtml(sup.name)}</span>`;
+      tile.addEventListener("click", e => {
+        e.stopPropagation();
+        toggleSupplementTaken(sup.id);
+        renderAll();
+      });
+      row.appendChild(tile);
+    }
+
+    grid.appendChild(row);
+    offset += rowSize;
   }
+
   block.appendChild(grid);
   return block;
 }
@@ -2049,7 +2249,7 @@ function isDayGoalAchieved(key) {
     if (!(goal > 0 && value >= goal * 0.9)) ok = false;
   }
 
-  const relevantSupplements = (state.supplements || []).filter(s => s.relevant && (!s.createdOn || s.createdOn <= key));
+  const relevantSupplements = (state.supplements || []).filter(s => isSupplementRelevantOn(s, key));
   const taken = new Set((state.supplementLogs?.[key] || []).map(String));
   for (const sup of relevantSupplements) {
     criteria++;
@@ -2456,12 +2656,16 @@ const I18N = {
     noSupplements: "Noch keine Supplements.",
     tapToCreateSupplement: "Antippen zum Erstellen",
     createSupplement: "Supplement erstellen",
+    editSupplement: "Supplement bearbeiten",
     supplementName: "Name",
     supplementNamePlaceholder: "z.B. Kreatin",
     supplementAmount: "Menge / Gewicht",
     unit: "Einheit",
     pieces: "Stück",
     supplementRelevant: "Relevant für Tagesziel",
+    supplementRelevantFromNow: "Änderungen an der Tagesziel-Relevanz gelten ab heute und verändern frühere Tage nicht rückwirkend.",
+    supplementReorder: "Reihenfolge ändern",
+    supplementReorderHint: "Am Pfeil gedrückt halten und nach oben oder unten ziehen.",
     supplementNameRequired: "Bitte einen Namen eingeben.",
     calendarTitle: "Tagesziele im Kalender",
     calendarAchieved: "Erreicht",
@@ -2560,12 +2764,16 @@ const I18N = {
     noSupplements: "No supplements yet.",
     tapToCreateSupplement: "Tap to create",
     createSupplement: "Create supplement",
+    editSupplement: "Edit supplement",
     supplementName: "Name",
     supplementNamePlaceholder: "e.g. creatine",
     supplementAmount: "Amount / weight",
     unit: "Unit",
     pieces: "Pieces",
     supplementRelevant: "Relevant for daily goal",
+    supplementRelevantFromNow: "Changes to daily-goal relevance apply from today and do not retroactively change earlier days.",
+    supplementReorder: "Change order",
+    supplementReorderHint: "Hold the arrow and drag up or down.",
     supplementNameRequired: "Please enter a name.",
     calendarTitle: "Daily goals calendar",
     calendarAchieved: "Achieved",
