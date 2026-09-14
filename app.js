@@ -140,6 +140,17 @@ function pickerStatsHtml(price, kcal, protein, carbs, fat) {
   `;
 }
 
+function suggestionStatsHtml(kcal, protein, carbs, fat) {
+  return `
+    <div class="suggestionStats">
+      <div class="pickerStat itemStat--kcal"><div class="pickerStat__label">kcal</div><div class="pickerStat__value">${escapeHtml(String(Math.round(kcal)))}</div></div>
+      <div class="pickerStat itemStat--protein"><div class="pickerStat__label">${escapeHtml(t("proteinLabel"))}</div><div class="pickerStat__value">${escapeHtml(round1(protein).replace(".", ","))} g</div></div>
+      <div class="pickerStat itemStat--carbs"><div class="pickerStat__label">${escapeHtml(t("carbsLabel"))}</div><div class="pickerStat__value">${escapeHtml(round1(carbs).replace(".", ","))} g</div></div>
+      <div class="pickerStat itemStat--fat"><div class="pickerStat__label">${escapeHtml(t("fatLabel"))}</div><div class="pickerStat__value">${escapeHtml(round1(fat).replace(".", ","))} g</div></div>
+    </div>
+  `;
+}
+
 function itemStatsHtml(price, kcal, protein, carbs, fat) {
   const p100prot = metricP100prot(price, protein);
   const p100kcal = metricP100kcal(price, kcal);
@@ -1194,17 +1205,22 @@ function openRecipeEditorModal(id, keepDraft = false) {
       <div class="recipeMetaEditor">
         <div class="recipeMetaEditor__label">${escapeHtml(t("recipeMeals"))}</div>
         <div class="recipeMealChoices">
-          ${MEALS.map(meal => `
-            <label class="recipeChoice">
-              <input type="checkbox" data-recipe-meal="${meal.key}">
-              <span>${escapeHtml(t(meal.labelKey))}</span>
+          ${[
+            ["breakfast", "FS"],
+            ["lunch", "ME"],
+            ["snacks", "SN"],
+            ["dinner", "AE"]
+          ].map(([key, shortLabel]) => `
+            <label class="recipeChoice" title="${escapeHtml(t(MEALS.find(m => m.key === key)?.labelKey || key))}">
+              <input type="checkbox" data-recipe-meal="${key}">
+              <span>${shortLabel}</span>
             </label>
           `).join("")}
+          <label class="recipeChoice recipeChoice--favorite" title="${escapeHtml(t("recipeFavorite"))}">
+            <input type="checkbox" id="mRecipeFavorite">
+            <span aria-hidden="true">★</span>
+          </label>
         </div>
-        <label class="recipeChoice recipeChoice--favorite">
-          <input type="checkbox" id="mRecipeFavorite">
-          <span>★ ${escapeHtml(t("recipeFavorite"))}</span>
-        </label>
       </div>
 
       <div class="row row--space row--stackMobile">
@@ -2806,9 +2822,12 @@ function renderSuggestions() {
     row.innerHTML = `
       <div class="suggestionCard__head">
         <div class="suggestionCard__name">${escapeHtml(r.name)}</div>
-        <div class="suggestionCard__last">${escapeHtml(recipeLastEatenLabel(item.lastKey))}</div>
+        <div class="suggestionCard__headMeta">
+          <div class="suggestionCard__price">${escapeHtml(euro(totals.price))}</div>
+          <div class="suggestionCard__last">${escapeHtml(recipeLastEatenLabel(item.lastKey))}</div>
+        </div>
       </div>
-      ${pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
+      ${suggestionStatsHtml(totals.kcal, totals.protein, totals.carbs, totals.fat)}
     `;
     const open = () => openSuggestionRecipeDetails(r.id);
     row.addEventListener("click", open);
