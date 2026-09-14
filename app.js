@@ -8,7 +8,7 @@ const LS_KEY = "kcal_tracker_v3";
 /*
   State:
   - ingredients: { id, name, brand, unitType, kcal, protein, carbs, fat, price }  (per base)
-  - recipes: { id, name, items: [{ ingredientId, amount }] }                     (amount in g/ml/pieces)
+  - recipes: { id, name, items: [{ ingredientId, amount }], mealTypes: [], favorite: false }
   - dayLogs: { [dateKey]: [{ id, type, refId?, amount?, meal?, name?, kcal?, protein?, carbs?, fat?, price? }] }
   - goals: { kcal, protein, price, carbs, fat }
   - goalRelevant: { kcal, protein, price, carbs, fat } (booleans for daily completion)
@@ -224,6 +224,16 @@ function normalizeStateObject(s) {
   const obj = (s && typeof s === "object") ? s : {};
   if (!Array.isArray(obj.ingredients)) obj.ingredients = [];
   if (!Array.isArray(obj.recipes)) obj.recipes = [];
+  obj.recipes = obj.recipes.map(recipe => ({
+    ...recipe,
+    id: recipe?.id || uid(),
+    name: String(recipe?.name || "").trim(),
+    items: Array.isArray(recipe?.items) ? recipe.items : [],
+    mealTypes: Array.isArray(recipe?.mealTypes)
+      ? [...new Set(recipe.mealTypes.filter(isValidMeal))]
+      : [],
+    favorite: Boolean(recipe?.favorite)
+  }));
   if (!obj.dayLogs || typeof obj.dayLogs !== "object") obj.dayLogs = {};
   if (!obj.goals || typeof obj.goals !== "object") obj.goals = { ...DEFAULT_GOALS };
 
@@ -509,7 +519,8 @@ const tabButtons = Array.from(document.querySelectorAll(".tabBtn"));
 const tabs = {
   day: $("#tab-day"),
   recipes: $("#tab-recipes"),
-  ingredients: $("#tab-ingredients")
+  ingredients: $("#tab-ingredients"),
+  suggestions: $("#tab-suggestions")
 };
 
 function setTab(name) {
@@ -734,7 +745,7 @@ const importFile = $("#importFile");
 
 btnExport.addEventListener("click", () => {
   // Add optional schemaVersion, but keep structure identical so old importers still work
-  const payload = { ...state, schemaVersion: 5 };
+  const payload = { ...state, schemaVersion: 6 };
   const data = JSON.stringify(payload, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -1148,7 +1159,7 @@ let editingRecipeId = null;
 btnNewRecipe.addEventListener("click", () => openRecipeEditorModal(null));
 
 function resetRecipeDraft() {
-  window.__recipeDraft = { id: "__draft", name: "", items: [] };
+  window.__recipeDraft = { id: "__draft", name: "", items: [], mealTypes: [], favorite: false };
 }
 resetRecipeDraft();
 
@@ -1158,7 +1169,13 @@ function openRecipeEditorModal(id, keepDraft = false) {
   if (!keepDraft) {
     if (id) {
       const r = state.recipes.find(x => x.id === id);
-      window.__recipeDraft = { id: r.id, name: r.name, items: r.items.map(x => ({ ...x })) };
+      window.__recipeDraft = {
+        id: r.id,
+        name: r.name,
+        items: r.items.map(x => ({ ...x })),
+        mealTypes: Array.isArray(r.mealTypes) ? [...r.mealTypes] : [],
+        favorite: Boolean(r.favorite)
+      };
     } else {
       resetRecipeDraft();
     }
@@ -1173,6 +1190,22 @@ function openRecipeEditorModal(id, keepDraft = false) {
         <span>Name</span>
         <input type="text" id="mRecipeName" placeholder="z.B. Hafer Bowl" required />
       </label>
+
+      <div class="recipeMetaEditor">
+        <div class="recipeMetaEditor__label">${escapeHtml(t("recipeMeals"))}</div>
+        <div class="recipeMealChoices">
+          ${MEALS.map(meal => `
+            <label class="recipeChoice">
+              <input type="checkbox" data-recipe-meal="${meal.key}">
+              <span>${escapeHtml(t(meal.labelKey))}</span>
+            </label>
+          `).join("")}
+        </div>
+        <label class="recipeChoice recipeChoice--favorite">
+          <input type="checkbox" id="mRecipeFavorite">
+          <span>★ ${escapeHtml(t("recipeFavorite"))}</span>
+        </label>
+      </div>
 
       <div class="row row--space row--stackMobile">
         <div class="h3">Zutaten</div>
@@ -1198,6 +1231,22 @@ function openRecipeEditorModal(id, keepDraft = false) {
 
     nameEl.addEventListener("input", () => {
       window.__recipeDraft.name = nameEl.value;
+    });
+
+    const mealChecks = Array.from(form.querySelectorAll("[data-recipe-meal]"));
+    for (const check of mealChecks) {
+      check.checked = window.__recipeDraft.mealTypes.includes(check.dataset.recipeMeal);
+      check.addEventListener("change", () => {
+        window.__recipeDraft.mealTypes = mealChecks
+          .filter(el => el.checked)
+          .map(el => el.dataset.recipeMeal);
+      });
+    }
+
+    const favoriteEl = form.querySelector("#mRecipeFavorite");
+    favoriteEl.checked = Boolean(window.__recipeDraft.favorite);
+    favoriteEl.addEventListener("change", () => {
+      window.__recipeDraft.favorite = favoriteEl.checked;
     });
 
     const listEl = form.querySelector("#mRecipeIngredients");
@@ -1299,11 +1348,18 @@ alert(t("needIngredientsFirst"));
         return;
       }
 
+      const recipePayload = {
+        name: draft.name,
+        items: draft.items,
+        mealTypes: Array.isArray(draft.mealTypes) ? [...draft.mealTypes] : [],
+        favorite: Boolean(draft.favorite)
+      };
+
       if (editingRecipeId) {
         const idx = state.recipes.findIndex(x => x.id === editingRecipeId);
-        if (idx >= 0) state.recipes[idx] = { id: editingRecipeId, name: draft.name, items: draft.items };
+        if (idx >= 0) state.recipes[idx] = { ...state.recipes[idx], id: editingRecipeId, ...recipePayload };
       } else {
-        state.recipes.push({ id: uid(), name: draft.name, items: draft.items });
+        state.recipes.push({ id: uid(), ...recipePayload });
         resetRecipeDraft();
       }
 
@@ -1806,10 +1862,21 @@ function openRecipePickerForDay(mealKey, onDone) {
       list.innerHTML = "";
       const f = (filter || "").toLowerCase();
 
+      const pickerPriority = (recipe) => {
+        const mealMatch = Array.isArray(recipe.mealTypes) && recipe.mealTypes.includes(mealKey);
+        if (mealMatch && recipe.favorite) return 0;
+        if (mealMatch) return 1;
+        return 2;
+      };
+
       const items = state.recipes
         .slice()
-        .sort((a, b) => (a.name || "").localeCompare(b.name || ""))
-        .filter(r => (r.name || "").toLowerCase().includes(f));
+        .filter(r => (r.name || "").toLowerCase().includes(f))
+        .sort((a, b) => {
+          const priorityDiff = pickerPriority(a) - pickerPriority(b);
+          if (priorityDiff !== 0) return priorityDiff;
+          return (a.name || "").localeCompare(b.name || "", loadLanguage() === "de" ? "de" : "en");
+        });
 
       for (const r of items) {
         const row = document.createElement("div");
@@ -1818,9 +1885,15 @@ function openRecipePickerForDay(mealKey, onDone) {
         const totals = calcRecipeTotals(r); // <-- NICHT "t" nennen!
 
         row.classList.add("pickerCard");
+        const mealMatch = Array.isArray(r.mealTypes) && r.mealTypes.includes(mealKey);
+        const marker = mealMatch
+          ? (r.favorite ? `★ ${t("recipeFavorite")}` : t("recipeMealMatch"))
+          : "";
+
         row.innerHTML = `
           <div class="pickerCard__head">
             <strong>${escapeHtml(r.name)}</strong>
+            ${marker ? `<span class="pickerCard__marker">${escapeHtml(marker)}</span>` : ""}
           </div>
           ${pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
         `;
@@ -2197,6 +2270,7 @@ function renderAll() {
   renderDay();
   renderIngredients();
   renderRecipes();
+  renderSuggestions();
   updateDateBar();
 
   todayKeyFromLastRender = todayKey;
@@ -2610,10 +2684,16 @@ function renderRecipes() {
     row.className = "item";
     row.addEventListener("click", () => openRecipeEditorModal(r.id));
 
+    const mealBadges = (r.mealTypes || []).map(key => {
+      const meal = MEALS.find(m => m.key === key);
+      return meal ? `<span class="recipeBadge">${escapeHtml(t(meal.labelKey))}</span>` : "";
+    }).join("");
+
     row.innerHTML = `
       <div class="item__top">
         <div class="item__heading">
-          <div class="item__title">${escapeHtml(r.name)}</div>
+          <div class="item__title">${r.favorite ? `<span class="recipeFavoriteStar" aria-label="${escapeHtml(t("recipeFavorite"))}">★</span>` : ""}${escapeHtml(r.name)}</div>
+          ${(mealBadges || r.favorite) ? `<div class="recipeBadgeRow">${mealBadges}</div>` : ""}
         </div>
         <div class="item__price">${escapeHtml(euro(totals.price))}</div>
       </div>
@@ -2621,6 +2701,124 @@ function renderRecipes() {
     `;
 
     recipesList.appendChild(row);
+  }
+}
+
+
+/* ===== Suggestions tab ===== */
+const suggestionsList = $("#suggestionsList");
+const suggestionsEmptyHint = $("#suggestionsEmptyHint");
+
+function daySerialFromKey(key) {
+  const parts = String(key || "").split("-").map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return NaN;
+  return Math.floor(Date.UTC(parts[0], parts[1] - 1, parts[2]) / 86400000);
+}
+
+function daysBetweenKeys(olderKey, newerKey) {
+  const a = daySerialFromKey(olderKey);
+  const b = daySerialFromKey(newerKey);
+  return (Number.isFinite(a) && Number.isFinite(b)) ? Math.max(0, b - a) : NaN;
+}
+
+function getRecipeLastEatenKey(recipeId) {
+  const todayKey = nowDayKeyRollover0430();
+  let latest = null;
+  for (const [key, entries] of Object.entries(state.dayLogs || {})) {
+    if (key > todayKey || !Array.isArray(entries)) continue;
+    if (entries.some(entry => entry?.type === "recipe" && entry.refId === recipeId)) {
+      if (!latest || key > latest) latest = key;
+    }
+  }
+  return latest;
+}
+
+function recipeLastEatenLabel(lastKey) {
+  if (!lastKey) return t("neverEaten");
+  const days = daysBetweenKeys(lastKey, nowDayKeyRollover0430());
+  if (!Number.isFinite(days)) return "";
+  if (days === 0) return t("eatenToday");
+  if (days === 1) return t("eatenOneDayAgo");
+  return t("eatenDaysAgo").replace("{days}", String(days));
+}
+
+function openSuggestionRecipeDetails(recipeId) {
+  const recipe = state.recipes.find(r => r.id === recipeId);
+  if (!recipe) return;
+
+  openModal(recipe.name, (container) => {
+    const intro = document.createElement("div");
+    intro.className = "suggestionDetailIntro";
+    intro.textContent = t("ingredientsTitle");
+    container.appendChild(intro);
+
+    const list = document.createElement("div");
+    list.className = "suggestionIngredientList";
+
+    for (const item of recipe.items || []) {
+      const ing = state.ingredients.find(x => x.id === item.ingredientId);
+      const row = document.createElement("div");
+      row.className = "suggestionIngredientRow";
+      row.innerHTML = `
+        <span class="suggestionIngredientName">${escapeHtml(ing?.name || t("unknownIngredient"))}</span>
+        <span class="suggestionIngredientAmount">${escapeHtml(ing ? amountLabel(ing.unitType, item.amount) : String(item.amount ?? ""))}</span>
+      `;
+      list.appendChild(row);
+    }
+
+    if (!recipe.items || recipe.items.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "hint";
+      empty.textContent = t("noRecipeIngredients");
+      list.appendChild(empty);
+    }
+
+    container.appendChild(list);
+  });
+}
+
+function renderSuggestions() {
+  if (!suggestionsList || !suggestionsEmptyHint) return;
+  suggestionsList.innerHTML = "";
+
+  const todayKey = nowDayKeyRollover0430();
+  const items = state.recipes
+    .filter(r => Boolean(r.favorite) && Array.isArray(r.mealTypes) && r.mealTypes.includes("lunch"))
+    .map(recipe => {
+      const lastKey = getRecipeLastEatenKey(recipe.id);
+      const daysSince = lastKey ? daysBetweenKeys(lastKey, todayKey) : Number.POSITIVE_INFINITY;
+      return { recipe, lastKey, daysSince };
+    })
+    .sort((a, b) => {
+      if (a.daysSince !== b.daysSince) return b.daysSince - a.daysSince;
+      return (a.recipe.name || "").localeCompare(b.recipe.name || "", loadLanguage() === "de" ? "de" : "en");
+    });
+
+  suggestionsEmptyHint.classList.toggle("hidden", items.length > 0);
+
+  for (const item of items) {
+    const r = item.recipe;
+    const totals = calcRecipeTotals(r);
+    const row = document.createElement("div");
+    row.className = "suggestionCard";
+    row.tabIndex = 0;
+    row.setAttribute("role", "button");
+    row.innerHTML = `
+      <div class="suggestionCard__head">
+        <div class="suggestionCard__name">${escapeHtml(r.name)}</div>
+        <div class="suggestionCard__last">${escapeHtml(recipeLastEatenLabel(item.lastKey))}</div>
+      </div>
+      ${pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
+    `;
+    const open = () => openSuggestionRecipeDetails(r.id);
+    row.addEventListener("click", open);
+    row.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        open();
+      }
+    });
+    suggestionsList.appendChild(row);
   }
 }
 
@@ -2673,6 +2871,20 @@ const I18N = {
     tabDay: "Tag",
     tabRecipes: "Gerichte",
     tabIngredients: "Zutaten",
+    tabSuggestions: "Vorschläge",
+
+    suggestionsTitle: "Vorschläge",
+    suggestionsIntro: "Favorisierte Mittagessen · am längsten nicht gegessen zuerst",
+    emptySuggestions: "Noch keine favorisierten Mittagessen-Gerichte.",
+    recipeMeals: "Mahlzeiten",
+    recipeFavorite: "Favorit",
+    recipeMealMatch: "Passende Mahlzeit",
+    neverEaten: "Noch nie gegessen",
+    eatenToday: "Heute gegessen",
+    eatenOneDayAgo: "Vor 1 Tag",
+    eatenDaysAgo: "Vor {days} Tagen",
+    unknownIngredient: "Unbekannte Zutat",
+    noRecipeIngredients: "Keine Zutaten hinterlegt.",
 
     recipesTitle: "Gerichte",
     newRecipe: "Neues Gericht",
@@ -2781,6 +2993,20 @@ const I18N = {
     tabDay: "Day",
     tabRecipes: "Recipes",
     tabIngredients: "Ingredients",
+    tabSuggestions: "Suggestions",
+
+    suggestionsTitle: "Suggestions",
+    suggestionsIntro: "Favorite lunch recipes · longest since eaten first",
+    emptySuggestions: "No favorite lunch recipes yet.",
+    recipeMeals: "Meals",
+    recipeFavorite: "Favorite",
+    recipeMealMatch: "Matching meal",
+    neverEaten: "Never eaten",
+    eatenToday: "Eaten today",
+    eatenOneDayAgo: "1 day ago",
+    eatenDaysAgo: "{days} days ago",
+    unknownIngredient: "Unknown ingredient",
+    noRecipeIngredients: "No ingredients saved.",
 
     recipesTitle: "Recipes",
     newRecipe: "New recipe",
@@ -2903,6 +3129,7 @@ function applyLanguage(lang) {
     if (nav === "day") btn.textContent = t("tabDay");
     if (nav === "recipes") btn.textContent = t("tabRecipes");
     if (nav === "ingredients") btn.textContent = t("tabIngredients");
+    if (nav === "suggestions") btn.textContent = t("tabSuggestions");
   });
 
   // Titles and placeholders
@@ -2910,6 +3137,10 @@ function applyLanguage(lang) {
   if (recipesTitle) recipesTitle.textContent = t("recipesTitle");
   const ingredientsTitle = document.querySelector("#tab-ingredients .h2");
   if (ingredientsTitle) ingredientsTitle.textContent = t("ingredientsTitle");
+  const suggestionsTitle = document.querySelector("#tab-suggestions .h2");
+  if (suggestionsTitle) suggestionsTitle.textContent = t("suggestionsTitle");
+  const suggestionsIntro = document.querySelector("#suggestionsIntro");
+  if (suggestionsIntro) suggestionsIntro.textContent = t("suggestionsIntro");
 
   const btnNewRecipe = document.querySelector("#btnNewRecipe");
   if (btnNewRecipe) btnNewRecipe.textContent = t("newRecipe");
@@ -2925,6 +3156,8 @@ function applyLanguage(lang) {
   if (recipesEmpty) recipesEmpty.textContent = t("emptyRecipes");
   const ingredientsEmpty = document.querySelector("#ingredientsEmptyHint");
   if (ingredientsEmpty) ingredientsEmpty.textContent = t("emptyIngredients");
+  const suggestionsEmpty = document.querySelector("#suggestionsEmptyHint");
+  if (suggestionsEmpty) suggestionsEmpty.textContent = t("emptySuggestions");
 
 
     const lblKcal = document.querySelector("#lblKcal");

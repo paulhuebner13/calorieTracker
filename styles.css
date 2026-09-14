@@ -1800,3 +1800,181 @@ html:not(.theme--light) .calendarWeek{ background:rgba(255,255,255,.035); }
   .supplementManageActions{ gap:3px; }
   .supplementEdit,.supplementDelete{ padding:5px 6px; font-size:8px; }
 }
+
+/* ===== v11: recipe meal tags, favorites and suggestions ===== */
+.tabs{
+  grid-template-columns:repeat(4, minmax(0, 1fr));
+}
+
+.recipeMetaEditor{
+  display:grid;
+  gap:7px;
+  padding:9px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:rgba(255,255,255,0.18);
+}
+html:not(.theme--light) .recipeMetaEditor{ background:rgba(255,255,255,0.035); }
+.recipeMetaEditor__label{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:850;
+}
+.recipeMealChoices{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+}
+.recipeChoice{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 8px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  font-size:12px;
+  font-weight:800;
+  color:var(--text);
+  background:rgba(255,255,255,0.20);
+  cursor:pointer;
+}
+html:not(.theme--light) .recipeChoice{ background:rgba(255,255,255,0.04); }
+.recipeChoice input{ margin:0; accent-color:var(--accent); }
+.recipeChoice--favorite{
+  justify-self:start;
+  padding-right:12px;
+}
+
+.recipeBadgeRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+  margin-top:5px;
+}
+.recipeBadge{
+  display:inline-flex;
+  align-items:center;
+  min-height:19px;
+  padding:3px 6px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.25);
+  color:var(--muted);
+  font-size:9px;
+  line-height:1;
+  font-weight:800;
+}
+html:not(.theme--light) .recipeBadge{ background:rgba(255,255,255,0.05); }
+.recipeFavoriteStar{
+  display:inline-block;
+  margin-right:6px;
+  font-size:.86em;
+  color:#d7a500;
+  vertical-align:.05em;
+}
+.pickerCard__marker{
+  flex:0 0 auto;
+  max-width:46%;
+  color:var(--muted);
+  font-size:9px;
+  line-height:1.1;
+  font-weight:850;
+  text-align:right;
+}
+
+.suggestionsPanel{ padding-bottom:12px; }
+.suggestionsIntro{
+  margin-top:4px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:750;
+  text-align:center;
+}
+.suggestionsList{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+.suggestionCard{
+  display:grid;
+  gap:6px;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:linear-gradient(180deg, var(--card), var(--card-tint));
+  box-shadow:var(--shadow-soft);
+  cursor:pointer;
+}
+.suggestionCard:active{ transform:scale(.995); }
+.suggestionCard__head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+}
+.suggestionCard__name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text);
+  font-size:15px;
+  font-weight:950;
+}
+.suggestionCard__last{
+  flex:0 0 auto;
+  color:var(--muted);
+  font-size:9px;
+  font-weight:850;
+  white-space:nowrap;
+}
+.suggestionDetailIntro{
+  color:var(--muted);
+  font-size:11px;
+  font-weight:850;
+  text-align:center;
+}
+.suggestionIngredientList{
+  display:grid;
+  gap:6px;
+}
+.suggestionIngredientRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  padding:9px 10px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:rgba(255,255,255,0.18);
+}
+html:not(.theme--light) .suggestionIngredientRow{ background:rgba(255,255,255,0.035); }
+.suggestionIngredientName{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:13px;
+  font-weight:850;
+}
+.suggestionIngredientAmount{
+  flex:0 0 auto;
+  color:var(--muted);
+  font-size:12px;
+  font-weight:850;
+}
+
+@media (min-width:701px){
+  .recipeMealChoices{ grid-template-columns:repeat(4,minmax(0,1fr)); }
+  .recipeChoice{ font-size:14px; padding:9px 10px; }
+  .recipeBadge{ font-size:11px; }
+  .suggestionsIntro{ font-size:12px; }
+  .suggestionCard{ padding:11px; gap:8px; }
+  .suggestionCard__name{ font-size:19px; }
+  .suggestionCard__last{ font-size:12px; }
+}
+
+@media (max-width:480px){
+  .tabs .tabBtn{ font-size:12px; padding-left:5px; padding-right:5px; }
+}

@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
 
   <title>Calorie Tracker</title>
-  <link rel="stylesheet" href="styles.css?v=ui-refresh9" />
+  <link rel="stylesheet" href="styles.css?v=ui-refresh11" />
   <link rel="manifest" href="manifest.webmanifest">
 </head>
 
@@ -164,6 +164,17 @@
       <button class="btn btn--big createBottomBtn" id="btnNewIngredient">Neue Zutat</button>
     </section>
 
+
+    <!-- SUGGESTIONS TAB -->
+    <section class="tab hidden" id="tab-suggestions" data-tab="suggestions">
+      <div class="card suggestionsPanel">
+        <div class="sectionTitle h2">Vorschläge</div>
+        <div class="suggestionsIntro" id="suggestionsIntro">Favorisierte Mittagessen · am längsten nicht gegessen zuerst</div>
+        <div id="suggestionsList" class="suggestionsList"></div>
+        <div class="hint" id="suggestionsEmptyHint">Noch keine favorisierten Mittagessen-Gerichte.</div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Bottom area -->
@@ -181,6 +192,7 @@
       <button class="tabBtn tabBtn--active" data-nav="day">Tag</button>
       <button class="tabBtn" data-nav="recipes">Gerichte</button>
       <button class="tabBtn" data-nav="ingredients">Zutaten</button>
+      <button class="tabBtn" data-nav="suggestions">Vorschläge</button>
     </nav>
   </div>
 
@@ -195,6 +207,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=ui-refresh9"></script>
+  <script src="app.js?v=ui-refresh11"></script>
 </body>
 </html>
