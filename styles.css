@@ -2080,3 +2080,134 @@ html:not(.theme--light) .recipeChoice{ background:transparent; }
   .suggestionCard__price{ font-size:14px; }
   .suggestionCard__last{ max-width:none; }
 }
+
+/* ===== v13: per-day recipe editing + suggestion scoring ===== */
+.mealEntryCard--clickable{ cursor:pointer; }
+.mealEntryCard--clickable:hover{ border-color:rgba(79,143,230,.28); }
+
+.recipeTimeField{ margin-top:8px; }
+
+.dayRecipeEditor{
+  gap:8px;
+}
+.dayRecipeEditor__hint{
+  color:var(--muted);
+  font-size:10.5px;
+  font-weight:750;
+  text-align:center;
+  line-height:1.25;
+}
+.dayRecipeEditor__list{
+  display:grid;
+  gap:6px;
+}
+.dayRecipeIngredient{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(112px, 42%);
+  align-items:center;
+  gap:8px;
+  padding:7px 8px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:rgba(255,255,255,.18);
+}
+html:not(.theme--light) .dayRecipeIngredient{ background:rgba(255,255,255,.035); }
+.dayRecipeIngredient__name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:12px;
+  font-weight:850;
+}
+.dayRecipeIngredient__amountWrap{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:5px;
+}
+.dayRecipeIngredient__input{
+  width:100%;
+  min-width:0;
+  min-height:34px;
+  padding:6px 8px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:rgba(255,255,255,.5);
+  color:var(--text);
+  font:inherit;
+  font-size:12px;
+  font-weight:850;
+  text-align:right;
+  outline:none;
+}
+html:not(.theme--light) .dayRecipeIngredient__input{ background:rgba(255,255,255,.055); }
+.dayRecipeIngredient__input:focus{
+  border-color:rgba(79,143,230,.5);
+  box-shadow:0 0 0 2px var(--accent-weak);
+}
+.dayRecipeIngredient__unit{
+  min-width:30px;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:850;
+}
+.dayRecipeEditor__totals .pickerStats{ margin-top:2px; }
+
+.suggestionCard{
+  border:2px solid var(--suggestion-border, var(--line));
+  box-shadow:0 0 0 1px color-mix(in srgb, var(--suggestion-border, transparent) 10%, transparent), var(--shadow-soft);
+}
+.suggestionCard__head{
+  align-items:center;
+}
+.suggestionCard__last{
+  max-width:130px;
+  text-align:right;
+}
+.suggestionQuickGrid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:5px;
+}
+.suggestionQuick{
+  min-width:0;
+  padding:7px 8px;
+  border:1px solid var(--line);
+  border-radius:9px;
+  text-align:center;
+  background:rgba(255,255,255,.18);
+}
+html:not(.theme--light) .suggestionQuick{ background:rgba(255,255,255,.035); }
+.suggestionQuick--cost{
+  border-color:color-mix(in srgb, var(--cost-accent) 62%, var(--line));
+  background:color-mix(in srgb, var(--cost-accent) 10%, transparent);
+}
+.suggestionQuick--time{
+  border-color:color-mix(in srgb, var(--time-accent) 62%, var(--line));
+  background:color-mix(in srgb, var(--time-accent) 10%, transparent);
+}
+.suggestionQuick__label{
+  color:var(--muted);
+  font-size:9px;
+  line-height:1;
+  font-weight:850;
+}
+.suggestionQuick__value{
+  margin-top:4px;
+  font-size:16px;
+  line-height:1;
+  font-weight:950;
+}
+.suggestionQuick--cost .suggestionQuick__value{ color:var(--cost-accent); }
+.suggestionQuick--time .suggestionQuick__value{ color:var(--time-accent); }
+
+@media (min-width:701px){
+  .dayRecipeEditor__hint{ font-size:12px; }
+  .dayRecipeIngredient{ padding:9px 10px; }
+  .dayRecipeIngredient__name{ font-size:14px; }
+  .dayRecipeIngredient__input{ min-height:40px; font-size:14px; }
+  .suggestionQuick{ padding:9px 10px; }
+  .suggestionQuick__label{ font-size:11px; }
+  .suggestionQuick__value{ font-size:20px; }
+}

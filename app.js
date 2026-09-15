@@ -8,7 +8,7 @@ const LS_KEY = "kcal_tracker_v3";
 /*
   State:
   - ingredients: { id, name, brand, unitType, kcal, protein, carbs, fat, price }  (per base)
-  - recipes: { id, name, items: [{ ingredientId, amount }], mealTypes: [], favorite: false }
+  - recipes: { id, name, items: [{ ingredientId, amount }], mealTypes: [], favorite: false, prepMinutes: 0 }
   - dayLogs: { [dateKey]: [{ id, type, refId?, amount?, meal?, name?, kcal?, protein?, carbs?, fat?, price? }] }
   - goals: { kcal, protein, price, carbs, fat }
   - goalRelevant: { kcal, protein, price, carbs, fat } (booleans for daily completion)
@@ -243,7 +243,10 @@ function normalizeStateObject(s) {
     mealTypes: Array.isArray(recipe?.mealTypes)
       ? [...new Set(recipe.mealTypes.filter(isValidMeal))]
       : [],
-    favorite: Boolean(recipe?.favorite)
+    favorite: Boolean(recipe?.favorite),
+    prepMinutes: Number.isFinite(Number(recipe?.prepMinutes)) && Number(recipe.prepMinutes) >= 0
+      ? Number(recipe.prepMinutes)
+      : 0
   }));
   if (!obj.dayLogs || typeof obj.dayLogs !== "object") obj.dayLogs = {};
   if (!obj.goals || typeof obj.goals !== "object") obj.goals = { ...DEFAULT_GOALS };
@@ -425,20 +428,49 @@ function calcIngredientTotals(ing, amount) {
   };
 }
 
-function calcRecipeTotals(recipe) {
-  let t = { kcal: 0, protein: 0, carbs: 0, fat: 0, price: 0 };
-
-  for (const it of recipe.items) {
+function calcRecipeItemsTotals(items) {
+  let totals = { kcal: 0, protein: 0, carbs: 0, fat: 0, price: 0 };
+  for (const it of (items || [])) {
     const ing = state.ingredients.find(x => x.id === it.ingredientId);
     if (!ing) continue;
-    const a = calcIngredientTotals(ing, it.amount);
-    t.kcal += a.kcal;
-    t.protein += a.protein;
-    t.carbs += a.carbs;
-    t.fat += a.fat;
-    t.price += a.price;
+    const a = calcIngredientTotals(ing, Number(it.amount) || 0);
+    totals.kcal += a.kcal;
+    totals.protein += a.protein;
+    totals.carbs += a.carbs;
+    totals.fat += a.fat;
+    totals.price += a.price;
   }
-  return t;
+  return totals;
+}
+
+function calcRecipeTotals(recipe) {
+  return calcRecipeItemsTotals(recipe?.items || []);
+}
+
+function calcRecipeEntryTotals(entry, recipe) {
+  if (Array.isArray(entry?.recipeItems)) {
+    return calcRecipeItemsTotals(entry.recipeItems);
+  }
+  const base = calcRecipeTotals(recipe);
+  const factor = Number(entry?.amount) || 0;
+  return {
+    price: base.price * factor,
+    kcal: base.kcal * factor,
+    protein: base.protein * factor,
+    carbs: base.carbs * factor,
+    fat: base.fat * factor
+  };
+}
+
+function ensureRecipeEntrySnapshot(entry, recipe) {
+  if (!Array.isArray(entry.recipeItems)) {
+    const factor = Number(entry.amount) || 1;
+    entry.recipeItems = (recipe.items || []).map(it => ({
+      ingredientId: it.ingredientId,
+      amount: (Number(it.amount) || 0) * factor
+    }));
+  }
+  return entry.recipeItems;
 }
 
 
@@ -756,7 +788,7 @@ const importFile = $("#importFile");
 
 btnExport.addEventListener("click", () => {
   // Add optional schemaVersion, but keep structure identical so old importers still work
-  const payload = { ...state, schemaVersion: 6 };
+  const payload = { ...state, schemaVersion: 7 };
   const data = JSON.stringify(payload, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -1170,7 +1202,7 @@ let editingRecipeId = null;
 btnNewRecipe.addEventListener("click", () => openRecipeEditorModal(null));
 
 function resetRecipeDraft() {
-  window.__recipeDraft = { id: "__draft", name: "", items: [], mealTypes: [], favorite: false };
+  window.__recipeDraft = { id: "__draft", name: "", items: [], mealTypes: [], favorite: false, prepMinutes: 0 };
 }
 resetRecipeDraft();
 
@@ -1185,7 +1217,8 @@ function openRecipeEditorModal(id, keepDraft = false) {
         name: r.name,
         items: r.items.map(x => ({ ...x })),
         mealTypes: Array.isArray(r.mealTypes) ? [...r.mealTypes] : [],
-        favorite: Boolean(r.favorite)
+        favorite: Boolean(r.favorite),
+        prepMinutes: Number(r.prepMinutes) || 0
       };
     } else {
       resetRecipeDraft();
@@ -1222,6 +1255,11 @@ function openRecipeEditorModal(id, keepDraft = false) {
           </label>
         </div>
       </div>
+
+      <label class="field recipeTimeField">
+        <span>${escapeHtml(t("prepTimeMinutes"))}</span>
+        <input type="text" inputmode="decimal" id="mRecipePrepMinutes" placeholder="z.B. 25" />
+      </label>
 
       <div class="row row--space row--stackMobile">
         <div class="h3">Zutaten</div>
@@ -1263,6 +1301,13 @@ function openRecipeEditorModal(id, keepDraft = false) {
     favoriteEl.checked = Boolean(window.__recipeDraft.favorite);
     favoriteEl.addEventListener("change", () => {
       window.__recipeDraft.favorite = favoriteEl.checked;
+    });
+
+    const prepMinutesEl = form.querySelector("#mRecipePrepMinutes");
+    prepMinutesEl.value = window.__recipeDraft.prepMinutes ? String(window.__recipeDraft.prepMinutes).replace(".", ",") : "";
+    prepMinutesEl.addEventListener("input", () => {
+      const parsed = parseNumber(prepMinutesEl.value);
+      window.__recipeDraft.prepMinutes = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
     });
 
     const listEl = form.querySelector("#mRecipeIngredients");
@@ -1364,11 +1409,17 @@ alert(t("needIngredientsFirst"));
         return;
       }
 
+      const prepMinutes = parseNumber(prepMinutesEl.value || "0");
+      if (!Number.isFinite(prepMinutes) || prepMinutes < 0) {
+        alert(t("prepTimeNonNegative"));
+        return;
+      }
       const recipePayload = {
         name: draft.name,
         items: draft.items,
         mealTypes: Array.isArray(draft.mealTypes) ? [...draft.mealTypes] : [],
-        favorite: Boolean(draft.favorite)
+        favorite: Boolean(draft.favorite),
+        prepMinutes
       };
 
       if (editingRecipeId) {
@@ -1561,12 +1612,11 @@ function openMealModal(mealKey) {
         } else if (entry.type === "recipe") {
           const r = state.recipes.find(x => x.id === entry.refId);
           if (!r) continue;
-          const base = calcRecipeTotals(r);
           const f = Number(entry.amount) || 0;
           titleText = r.name;
           const factorText = round2(f).replace(/([,.]\d*?[1-9])0+$|[,.]0+$/, "$1").replace(".", ",");
           amountText = `${factorText} ${loadLanguage() === "en" ? (Math.abs(f - 1) < 0.0001 ? "portion" : "portions") : (Math.abs(f - 1) < 0.0001 ? "Portion" : "Portionen")}`;
-          totals = { price: base.price*f, kcal: base.kcal*f, protein: base.protein*f, carbs: base.carbs*f, fat: base.fat*f };
+          totals = calcRecipeEntryTotals(entry, r);
         } else if (entry.type === "manual") {
           titleText = (entry.name || "").trim() || t("manualEntry");
           totals = {
@@ -1602,6 +1652,13 @@ function openMealModal(mealKey) {
         row.querySelector(".mealEntryEdit").addEventListener("click", () => {
           openDayEntryEditor(entry, mealKey);
         });
+        if (entry.type === "recipe") {
+          row.classList.add("mealEntryCard--clickable");
+          row.addEventListener("click", (event) => {
+            if (event.target.closest("button")) return;
+            openDayEntryEditor(entry, mealKey);
+          });
+        }
 
         list.appendChild(row);
       }
@@ -1659,21 +1716,54 @@ function openDayEntryEditor(entry, mealKey) {
   if (entry.type === "recipe") {
     const recipe = state.recipes.find(x => x.id === entry.refId);
     if (!recipe) return;
+    ensureRecipeEntrySnapshot(entry, recipe);
+    saveState();
+
     openModal(`${t("editButton")} · ${recipe.name}`, (container) => {
-      const form = document.createElement("form");
-      form.className = "modalRow";
-      form.innerHTML = `
-        <label class="field"><span>${escapeHtml(t("portionAmount"))}</span>
-          <input class="searchInput" id="mEditAmount" type="text" inputmode="decimal" value="${escapeHtml(String(entry.amount).replace(".", ","))}">
-        </label>
-        <button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
-      container.appendChild(form);
-      form.addEventListener("submit", e => {
-        e.preventDefault();
-        const n = parseNumber(form.querySelector("#mEditAmount").value);
-        if (!Number.isFinite(n) || n <= 0) return alert(t("amountPositive"));
-        entry.amount = n; saveState(); closeModal(); reopen();
-      });
+      const wrap = document.createElement("div");
+      wrap.className = "modalRow dayRecipeEditor";
+      wrap.innerHTML = `
+        <div class="dayRecipeEditor__hint">${escapeHtml(t("dayRecipeEditHint"))}</div>
+        <div class="dayRecipeEditor__list"></div>
+        <div class="dayRecipeEditor__totals"></div>`;
+      container.appendChild(wrap);
+
+      const listEl = wrap.querySelector(".dayRecipeEditor__list");
+      const totalsEl = wrap.querySelector(".dayRecipeEditor__totals");
+
+      function renderDayRecipeEditor() {
+        listEl.innerHTML = "";
+        for (const item of entry.recipeItems || []) {
+          const ing = state.ingredients.find(x => x.id === item.ingredientId);
+          if (!ing) continue;
+          const row = document.createElement("label");
+          row.className = "dayRecipeIngredient";
+          row.innerHTML = `
+            <span class="dayRecipeIngredient__name">${escapeHtml(ing.name)}</span>
+            <div class="dayRecipeIngredient__amountWrap">
+              <input class="dayRecipeIngredient__input" type="text" inputmode="decimal" value="${escapeHtml(String(item.amount).replace(".", ","))}" />
+              <span class="dayRecipeIngredient__unit">${escapeHtml(ing.unitType === "piece" ? "Stück" : (ing.unitType === "100ml" ? "ml" : "g"))}</span>
+            </div>`;
+          const input = row.querySelector("input");
+          const commit = () => {
+            const n = parseNumber(input.value);
+            if (!Number.isFinite(n) || n < 0) return;
+            item.amount = n;
+            entry.customizedRecipe = true;
+            saveState();
+            renderAll();
+            const totals = calcRecipeEntryTotals(entry, recipe);
+            totalsEl.innerHTML = pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat);
+          };
+          input.addEventListener("input", commit);
+          input.addEventListener("change", commit);
+          listEl.appendChild(row);
+        }
+        const totals = calcRecipeEntryTotals(entry, recipe);
+        totalsEl.innerHTML = pickerStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat);
+      }
+
+      renderDayRecipeEditor();
     });
     return;
   }
@@ -1938,7 +2028,11 @@ function openRecipePickerForDay(mealKey, onDone) {
             type: "recipe",
             refId: r.id,
             amount: n,
-            meal: mealKey
+            meal: mealKey,
+            recipeItems: (r.items || []).map(it => ({
+              ingredientId: it.ingredientId,
+              amount: (Number(it.amount) || 0) * n
+            }))
           });
 
           saveState();
@@ -2326,12 +2420,12 @@ function calcTotalsForEntries(entries) {
     } else if (entry.type === "recipe") {
       const r = state.recipes.find(x => x.id === entry.refId);
       if (!r) continue;
-      const t = calcRecipeTotals(r);
-      totals.kcal += t.kcal * entry.amount;
-      totals.protein += t.protein * entry.amount;
-      totals.carbs += t.carbs * entry.amount;
-      totals.fat += t.fat * entry.amount;
-      totals.price += t.price * entry.amount;
+      const t = calcRecipeEntryTotals(entry, r);
+      totals.kcal += t.kcal;
+      totals.protein += t.protein;
+      totals.carbs += t.carbs;
+      totals.fat += t.fat;
+      totals.price += t.price;
     } else if (entry.type === "manual") {
       totals.kcal += Number(entry.kcal) || 0;
       totals.protein += Number(entry.protein) || 0;
@@ -2711,7 +2805,7 @@ function renderRecipes() {
           <div class="item__title">${r.favorite ? `<span class="recipeFavoriteStar" aria-label="${escapeHtml(t("recipeFavorite"))}">★</span>` : ""}${escapeHtml(r.name)}</div>
           ${(mealBadges || r.favorite) ? `<div class="recipeBadgeRow">${mealBadges}</div>` : ""}
         </div>
-        <div class="item__price">${escapeHtml(euro(totals.price))}</div>
+        <div class="item__price"><div>${escapeHtml(euro(totals.price))}</div>${Number(r.prepMinutes) > 0 ? `<div class="item__unit">${escapeHtml(String(Math.round(r.prepMinutes)))} min</div>` : ""}</div>
       </div>
       ${itemStatsHtml(totals.price, totals.kcal, totals.protein, totals.carbs, totals.fat)}
     `;
@@ -2793,6 +2887,20 @@ function openSuggestionRecipeDetails(recipeId) {
   });
 }
 
+function suggestionBorderColor(daysSince) {
+  if (!Number.isFinite(daysSince)) return "hsl(125 48% 43%)";
+  const clamped = Math.max(0, Math.min(14, daysSince));
+  const hue = Math.round((clamped / 14) * 120);
+  return `hsl(${hue} 58% 46%)`;
+}
+
+function lowIsGoodColor(value, badAt) {
+  const safe = Math.max(0, Number(value) || 0);
+  const ratio = Math.max(0, Math.min(1, safe / badAt));
+  const hue = Math.round((1 - ratio) * 120);
+  return `hsl(${hue} 58% 45%)`;
+}
+
 function renderSuggestions() {
   if (!suggestionsList || !suggestionsEmptyHint) return;
   suggestionsList.innerHTML = "";
@@ -2819,12 +2927,22 @@ function renderSuggestions() {
     row.className = "suggestionCard";
     row.tabIndex = 0;
     row.setAttribute("role", "button");
+    row.style.setProperty("--suggestion-border", suggestionBorderColor(item.daysSince));
+    row.style.setProperty("--cost-accent", lowIsGoodColor(totals.price, 15));
+    row.style.setProperty("--time-accent", Number(r.prepMinutes) > 0 ? lowIsGoodColor(r.prepMinutes, 90) : "var(--muted)");
     row.innerHTML = `
       <div class="suggestionCard__head">
         <div class="suggestionCard__name">${escapeHtml(r.name)}</div>
-        <div class="suggestionCard__headMeta">
-          <div class="suggestionCard__price">${escapeHtml(euro(totals.price))}</div>
-          <div class="suggestionCard__last">${escapeHtml(recipeLastEatenLabel(item.lastKey))}</div>
+        <div class="suggestionCard__last">${escapeHtml(recipeLastEatenLabel(item.lastKey))}</div>
+      </div>
+      <div class="suggestionQuickGrid">
+        <div class="suggestionQuick suggestionQuick--cost">
+          <div class="suggestionQuick__label">${escapeHtml(t("costLabel"))}</div>
+          <div class="suggestionQuick__value">${escapeHtml(euro(totals.price))}</div>
+        </div>
+        <div class="suggestionQuick suggestionQuick--time">
+          <div class="suggestionQuick__label">${escapeHtml(t("timeLabel"))}</div>
+          <div class="suggestionQuick__value">${Number(r.prepMinutes) > 0 ? `${escapeHtml(String(Math.round(Number(r.prepMinutes))))} min` : "—"}</div>
         </div>
       </div>
       ${suggestionStatsHtml(totals.kcal, totals.protein, totals.carbs, totals.fat)}
@@ -2897,6 +3015,11 @@ const I18N = {
     emptySuggestions: "Noch keine favorisierten Mittagessen-Gerichte.",
     recipeMeals: "Mahlzeiten",
     recipeFavorite: "Favorit",
+    prepTimeMinutes: "Zubereitungszeit (Minuten)",
+    prepTimeNonNegative: "Zubereitungszeit muss eine Zahl ≥ 0 sein.",
+    dayRecipeEditHint: "Änderungen gelten nur für diesen Tages-Eintrag und werden sofort gespeichert.",
+    costLabel: "Kosten",
+    timeLabel: "Zeit",
     recipeMealMatch: "Passende Mahlzeit",
     neverEaten: "Noch nie gegessen",
     eatenToday: "Heute gegessen",
@@ -3019,6 +3142,11 @@ const I18N = {
     emptySuggestions: "No favorite lunch recipes yet.",
     recipeMeals: "Meals",
     recipeFavorite: "Favorite",
+    prepTimeMinutes: "Preparation time (minutes)",
+    prepTimeNonNegative: "Preparation time must be a number ≥ 0.",
+    dayRecipeEditHint: "Changes apply only to this day's entry and are saved immediately.",
+    costLabel: "Cost",
+    timeLabel: "Time",
     recipeMealMatch: "Matching meal",
     neverEaten: "Never eaten",
     eatenToday: "Eaten today",
