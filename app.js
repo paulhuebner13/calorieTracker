@@ -441,6 +441,35 @@ function calcRecipeTotals(recipe) {
   return t;
 }
 
+function calcRecipeItemsTotals(items) {
+  let totals = { kcal: 0, protein: 0, carbs: 0, fat: 0, price: 0 };
+  for (const it of (items || [])) {
+    const ing = state.ingredients.find(x => x.id === it.ingredientId);
+    if (!ing) continue;
+    const a = calcIngredientTotals(ing, Number(it.amount) || 0);
+    totals.kcal += a.kcal;
+    totals.protein += a.protein;
+    totals.carbs += a.carbs;
+    totals.fat += a.fat;
+    totals.price += a.price;
+  }
+  return totals;
+}
+
+function getDayRecipeItems(entry, recipe) {
+  if (Array.isArray(entry?.recipeItems) && entry.recipeItems.length > 0) {
+    return entry.recipeItems.map(it => ({
+      ingredientId: it.ingredientId,
+      amount: Number(it.amount) || 0
+    }));
+  }
+  const factor = Number(entry?.amount) || 1;
+  return (recipe?.items || []).map(it => ({
+    ingredientId: it.ingredientId,
+    amount: (Number(it.amount) || 0) * factor
+  }));
+}
+
 
 function ratioColor(value, reference) {
   // IMPORTANT: read from :root so theme vars are always found
@@ -1307,14 +1336,13 @@ function openRecipeEditorModal(id, keepDraft = false) {
                 ${ing.brand ? `<div class="item__sub">${escapeHtml(ing.brand)}</div>` : ""}
               </div>
             </div>
-            <label class="recipeIngredientAmount">
-              <span>Menge</span>
+            <div class="recipeIngredientTotals">${pickerStatsHtml(a.price, a.kcal, a.protein, a.carbs, a.fat)}</div>
+            <div class="recipeIngredientInlineActions">
               <div class="recipeIngredientAmount__control">
                 <input class="searchInput recipeIngredientAmount__input" type="text" inputmode="decimal" value="${escapeHtml(String(it.amount).replace(".", ","))}" aria-label="Menge ${escapeHtml(ing.name)}">
                 <span class="recipeIngredientAmount__unit">${escapeHtml(amountUnit)}</span>
               </div>
-            </label>
-            <div class="recipeIngredientTotals">${pickerStatsHtml(a.price, a.kcal, a.protein, a.carbs, a.fat)}</div>
+            </div>
           `;
 
           const amountInput = row.querySelector(".recipeIngredientAmount__input");
@@ -1351,7 +1379,9 @@ function openRecipeEditorModal(id, keepDraft = false) {
         });
 
         actions.appendChild(btnRemove);
-        row.appendChild(actions);
+        const inlineActions = row.querySelector(".recipeIngredientInlineActions");
+        if (inlineActions) inlineActions.appendChild(actions);
+        else row.appendChild(actions);
         listEl.appendChild(row);
       });
 
@@ -1587,12 +1617,11 @@ function openMealModal(mealKey) {
         } else if (entry.type === "recipe") {
           const r = state.recipes.find(x => x.id === entry.refId);
           if (!r) continue;
-          const base = calcRecipeTotals(r);
-          const f = Number(entry.amount) || 0;
+          const f = Number(entry.amount) || 1;
           titleText = r.name;
           const factorText = round2(f).replace(/([,.]\d*?[1-9])0+$|[,.]0+$/, "$1").replace(".", ",");
           amountText = `${factorText} ${loadLanguage() === "en" ? (Math.abs(f - 1) < 0.0001 ? "portion" : "portions") : (Math.abs(f - 1) < 0.0001 ? "Portion" : "Portionen")}`;
-          totals = { price: base.price*f, kcal: base.kcal*f, protein: base.protein*f, carbs: base.carbs*f, fat: base.fat*f };
+          totals = calcRecipeItemsTotals(getDayRecipeItems(entry, r));
         } else if (entry.type === "manual") {
           titleText = (entry.name || "").trim() || t("manualEntry");
           totals = {
@@ -1685,20 +1714,78 @@ function openDayEntryEditor(entry, mealKey) {
   if (entry.type === "recipe") {
     const recipe = state.recipes.find(x => x.id === entry.refId);
     if (!recipe) return;
+
+    let draftFactor = Number(entry.amount) || 1;
+    let draftItems = getDayRecipeItems(entry, recipe).map(it => ({ ...it }));
+
     openModal(`${t("editButton")} · ${recipe.name}`, (container) => {
       const form = document.createElement("form");
-      form.className = "modalRow";
+      form.className = "modalRow dayRecipeEdit";
       form.innerHTML = `
-        <label class="field"><span>${escapeHtml(t("portionAmount"))}</span>
-          <input class="searchInput" id="mEditAmount" type="text" inputmode="decimal" value="${escapeHtml(String(entry.amount).replace(".", ","))}">
+        <label class="field dayRecipeFactor"><span>${escapeHtml(t("portionAmount"))}</span>
+          <input class="searchInput" id="mEditAmount" type="text" inputmode="decimal" value="${escapeHtml(String(draftFactor).replace(".", ","))}">
         </label>
+        <div class="dayRecipeIngredientList" id="dayRecipeIngredientList"></div>
         <button class="btn btn--big" type="submit">${escapeHtml(t("saveButton"))}</button>`;
       container.appendChild(form);
+
+      const list = form.querySelector("#dayRecipeIngredientList");
+      const factorInput = form.querySelector("#mEditAmount");
+
+      function renderDayRecipeIngredients() {
+        list.innerHTML = "";
+        draftItems.forEach((it, idx) => {
+          const ing = state.ingredients.find(x => x.id === it.ingredientId);
+          if (!ing) return;
+          const unit = ing.unitType === "piece" ? "Stück" : (ing.unitType === "100ml" ? "ml" : "g");
+          const row = document.createElement("div");
+          row.className = "dayRecipeIngredientRow";
+          row.innerHTML = `
+            <div class="dayRecipeIngredientName">${escapeHtml(ing.name)}</div>
+            <div class="dayRecipeIngredientAmount">
+              <input class="searchInput" type="text" inputmode="decimal" value="${escapeHtml(String(it.amount).replace(".", ","))}" aria-label="${escapeHtml(ing.name)}">
+              <span>${escapeHtml(unit)}</span>
+            </div>`;
+          const input = row.querySelector("input");
+          const commit = () => {
+            const n = parseNumber(input.value);
+            if (!Number.isFinite(n) || n < 0) {
+              input.value = String(draftItems[idx].amount).replace(".", ",");
+              return;
+            }
+            draftItems[idx].amount = n;
+          };
+          input.addEventListener("change", commit);
+          input.addEventListener("blur", commit);
+          list.appendChild(row);
+        });
+      }
+
+      const commitFactor = () => {
+        const n = parseNumber(factorInput.value);
+        if (!Number.isFinite(n) || n <= 0) {
+          factorInput.value = String(draftFactor).replace(".", ",");
+          return;
+        }
+        if (Math.abs(n - draftFactor) < 1e-9) return;
+        const ratio = n / draftFactor;
+        draftItems = draftItems.map(it => ({ ...it, amount: (Number(it.amount) || 0) * ratio }));
+        draftFactor = n;
+        renderDayRecipeIngredients();
+      };
+      factorInput.addEventListener("change", commitFactor);
+      factorInput.addEventListener("blur", commitFactor);
+
+      renderDayRecipeIngredients();
+
       form.addEventListener("submit", e => {
         e.preventDefault();
-        const n = parseNumber(form.querySelector("#mEditAmount").value);
-        if (!Number.isFinite(n) || n <= 0) return alert(t("amountPositive"));
-        entry.amount = n; saveState(); closeModal(); reopen();
+        commitFactor();
+        for (const input of list.querySelectorAll("input")) input.dispatchEvent(new Event("change"));
+        if (draftItems.some(it => !Number.isFinite(Number(it.amount)) || Number(it.amount) < 0)) return alert(t("numberNonNegative"));
+        entry.amount = draftFactor;
+        entry.recipeItems = draftItems.map(it => ({ ingredientId: it.ingredientId, amount: Number(it.amount) || 0 }));
+        saveState(); closeModal(); reopen();
       });
     });
     return;
@@ -1964,7 +2051,11 @@ function openRecipePickerForDay(mealKey, onDone) {
             type: "recipe",
             refId: r.id,
             amount: n,
-            meal: mealKey
+            meal: mealKey,
+            recipeItems: (r.items || []).map(it => ({
+              ingredientId: it.ingredientId,
+              amount: (Number(it.amount) || 0) * n
+            }))
           });
 
           saveState();
@@ -2352,12 +2443,12 @@ function calcTotalsForEntries(entries) {
     } else if (entry.type === "recipe") {
       const r = state.recipes.find(x => x.id === entry.refId);
       if (!r) continue;
-      const t = calcRecipeTotals(r);
-      totals.kcal += t.kcal * entry.amount;
-      totals.protein += t.protein * entry.amount;
-      totals.carbs += t.carbs * entry.amount;
-      totals.fat += t.fat * entry.amount;
-      totals.price += t.price * entry.amount;
+      const recipeTotals = calcRecipeItemsTotals(getDayRecipeItems(entry, r));
+      totals.kcal += recipeTotals.kcal;
+      totals.protein += recipeTotals.protein;
+      totals.carbs += recipeTotals.carbs;
+      totals.fat += recipeTotals.fat;
+      totals.price += recipeTotals.price;
     } else if (entry.type === "manual") {
       totals.kcal += Number(entry.kcal) || 0;
       totals.protein += Number(entry.protein) || 0;
@@ -2819,6 +2910,20 @@ function openSuggestionRecipeDetails(recipeId) {
   });
 }
 
+function suggestionAgeClass(daysSince) {
+  if (!Number.isFinite(daysSince)) return "suggestionCard--never";
+  if (daysSince >= 14) return "suggestionCard--old";
+  if (daysSince >= 7) return "suggestionCard--mid";
+  if (daysSince >= 3) return "suggestionCard--recent";
+  return "suggestionCard--fresh";
+}
+
+function suggestionPriceColor(price) {
+  const dailyBudget = Number(state?.goals?.price);
+  const mealReference = Number.isFinite(dailyBudget) && dailyBudget > 0 ? dailyBudget / 3 : NaN;
+  return ratioColor(price, mealReference);
+}
+
 function renderSuggestions() {
   if (!suggestionsList || !suggestionsEmptyHint) return;
   suggestionsList.innerHTML = "";
@@ -2842,14 +2947,19 @@ function renderSuggestions() {
     const r = item.recipe;
     const totals = calcRecipeTotals(r);
     const row = document.createElement("div");
-    row.className = "suggestionCard";
+    row.className = `suggestionCard ${suggestionAgeClass(item.daysSince)}`;
     row.tabIndex = 0;
     row.setAttribute("role", "button");
+    const priceColor = suggestionPriceColor(totals.price);
     row.innerHTML = `
       <div class="suggestionCard__head">
         <div class="suggestionCard__name">${escapeHtml(r.name)}</div>
-        <div class="suggestionCard__headMeta">
-          <div class="suggestionCard__price">${escapeHtml(euro(totals.price))}</div>
+        <div class="suggestionCard__priceCol">
+          <div class="suggestionCard__metaLabel">${escapeHtml(t("priceLabel"))}</div>
+          <div class="suggestionCard__price" style="color:${escapeHtml(priceColor)}">${escapeHtml(euro(totals.price))}</div>
+        </div>
+        <div class="suggestionCard__daysCol">
+          <div class="suggestionCard__metaLabel">${loadLanguage() === "en" ? "Last" : "Zuletzt"}</div>
           <div class="suggestionCard__last">${escapeHtml(recipeLastEatenLabel(item.lastKey))}</div>
         </div>
       </div>
