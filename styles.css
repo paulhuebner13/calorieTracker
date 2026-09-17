@@ -2303,3 +2303,48 @@ html:not(.theme--light) .suggestionCard--never{
   .suggestionCard__last{ font-size:11px; }
   .dayRecipeIngredientRow{ grid-template-columns:minmax(0,1fr) 220px; }
 }
+
+
+/* ===== v15: shopping multiplier in suggestion details ===== */
+.suggestionScaler{
+  display:grid;
+  gap:6px;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:rgba(255,255,255,0.16);
+}
+html:not(.theme--light) .suggestionScaler{
+  background:rgba(255,255,255,0.035);
+}
+.suggestionScaler__top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.suggestionScaler__label{
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.1;
+  font-weight:850;
+}
+.suggestionScaler__value{
+  color:var(--text);
+  font-size:12px;
+  line-height:1;
+  font-weight:950;
+  font-variant-numeric:tabular-nums;
+}
+.suggestionScaler__range{
+  width:100%;
+  height:18px;
+  margin:0;
+  accent-color:var(--accent);
+  cursor:pointer;
+}
+@media (min-width:701px){
+  .suggestionScaler{ padding:10px 12px; gap:8px; }
+  .suggestionScaler__label{ font-size:12px; }
+  .suggestionScaler__value{ font-size:14px; }
+}

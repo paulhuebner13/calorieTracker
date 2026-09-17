@@ -2880,6 +2880,28 @@ function openSuggestionRecipeDetails(recipeId) {
   if (!recipe) return;
 
   openModal(recipe.name, (container) => {
+    let multiplier = 1;
+
+    const scaler = document.createElement("div");
+    scaler.className = "suggestionScaler";
+    scaler.innerHTML = `
+      <div class="suggestionScaler__top">
+        <span class="suggestionScaler__label">${escapeHtml(t("shoppingMultiplier"))}</span>
+        <span class="suggestionScaler__value" id="suggestionMultiplierValue">1×</span>
+      </div>
+      <input
+        class="suggestionScaler__range"
+        id="suggestionMultiplier"
+        type="range"
+        min="1"
+        max="10"
+        step="1"
+        value="1"
+        aria-label="${escapeHtml(t("shoppingMultiplier"))}"
+      />
+    `;
+    container.appendChild(scaler);
+
     const intro = document.createElement("div");
     intro.className = "suggestionDetailIntro";
     intro.textContent = t("ingredientsTitle");
@@ -2887,26 +2909,51 @@ function openSuggestionRecipeDetails(recipeId) {
 
     const list = document.createElement("div");
     list.className = "suggestionIngredientList";
-
-    for (const item of recipe.items || []) {
-      const ing = state.ingredients.find(x => x.id === item.ingredientId);
-      const row = document.createElement("div");
-      row.className = "suggestionIngredientRow";
-      row.innerHTML = `
-        <span class="suggestionIngredientName">${escapeHtml(ing?.name || t("unknownIngredient"))}</span>
-        <span class="suggestionIngredientAmount">${escapeHtml(ing ? amountLabel(ing.unitType, item.amount) : String(item.amount ?? ""))}</span>
-      `;
-      list.appendChild(row);
-    }
-
-    if (!recipe.items || recipe.items.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "hint";
-      empty.textContent = t("noRecipeIngredients");
-      list.appendChild(empty);
-    }
-
     container.appendChild(list);
+
+    function formatScaledAmount(unitType, amount) {
+      const n = Number(amount) * multiplier;
+      if (!Number.isFinite(n)) return "";
+      const rounded = Math.round(n * 10) / 10;
+      const text = Number.isInteger(rounded)
+        ? String(rounded)
+        : String(rounded).replace(".", ",");
+      if (unitType === "piece") return `${text} Stück`;
+      if (unitType === "100ml") return `${text} ml`;
+      return `${text} g`;
+    }
+
+    function renderIngredients() {
+      list.innerHTML = "";
+
+      for (const item of recipe.items || []) {
+        const ing = state.ingredients.find(x => x.id === item.ingredientId);
+        const row = document.createElement("div");
+        row.className = "suggestionIngredientRow";
+        row.innerHTML = `
+          <span class="suggestionIngredientName">${escapeHtml(ing?.name || t("unknownIngredient"))}</span>
+          <span class="suggestionIngredientAmount">${escapeHtml(ing ? formatScaledAmount(ing.unitType, item.amount) : String((Number(item.amount) || 0) * multiplier))}</span>
+        `;
+        list.appendChild(row);
+      }
+
+      if (!recipe.items || recipe.items.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "hint";
+        empty.textContent = t("noRecipeIngredients");
+        list.appendChild(empty);
+      }
+    }
+
+    const slider = scaler.querySelector("#suggestionMultiplier");
+    const valueEl = scaler.querySelector("#suggestionMultiplierValue");
+    slider.addEventListener("input", () => {
+      multiplier = Math.max(1, Math.min(10, Number(slider.value) || 1));
+      valueEl.textContent = `${multiplier}×`;
+      renderIngredients();
+    });
+
+    renderIngredients();
   });
 }
 
@@ -3039,6 +3086,7 @@ const I18N = {
     eatenOneDayAgo: "Vor 1 Tag",
     eatenDaysAgo: "Vor {days} Tagen",
     unknownIngredient: "Unbekannte Zutat",
+    shoppingMultiplier: "Einkaufsmenge",
     noRecipeIngredients: "Keine Zutaten hinterlegt.",
 
     recipesTitle: "Gerichte",
@@ -3161,6 +3209,7 @@ const I18N = {
     eatenOneDayAgo: "1 day ago",
     eatenDaysAgo: "{days} days ago",
     unknownIngredient: "Unknown ingredient",
+    shoppingMultiplier: "Shopping amount",
     noRecipeIngredients: "No ingredients saved.",
 
     recipesTitle: "Recipes",
